@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+
+    <bean id="consoleConnector" class="pl.edu.agh.ConsoleConnector">
+    </bean>
+
+    <bean id="daemonMaster" class="pl.edu.agh.DaemonMaster">
+        <property name="daemons">
+            <list value-type="pl.edu.agh.Daemon">
+                <ref bean="cpuDaemon"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="cpuDaemon" class="pl.edu.agh.CpuDaemon">
+        <property name="name" value="temp"/>
+        <property name="sleepTime" value="60000"/>
+        <property name="enabled" value="true"/>
+        <property name="dbConnection" ref="dbConnection"/>
+    </bean>
+
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="org.postgresql.Driver"/>
+        <property name="url" value="jdbc:postgresql://localhost:5432/db"/>
+        <property name="username" value="rmartyna"/>
+        <property name="password" value="rmartyna"/>
+    </bean>
+
+    <bean id="dbConnection" class="pl.edu.agh.DbConnection">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+</beans>
