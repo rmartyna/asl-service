@@ -45,11 +45,16 @@ public class DbConnection implements InitializingBean {
             return serviceId;
 
         try {
-            String address = InetAddress.getLocalHost().getHostAddress();
+            String address = InetAddress.getLocalHost().toString();
 
-            PreparedStatement getServiceId = connection.prepareStatement("SELECT id FROM service WHERE host=" + address + " AND PORT=" + port);
+            LOGGER.info("address: " + address);
+            LOGGER.info("port: " + port);
+
+
+            PreparedStatement getServiceId = connection.prepareStatement("SELECT id FROM service WHERE host='" + address + "' AND PORT=" + port);
             try {
                 ResultSet result = getServiceId.executeQuery();
+                result.next();
                 serviceId = result.getInt(1);
                 return serviceId;
             } catch(Exception e) {
@@ -59,10 +64,11 @@ public class DbConnection implements InitializingBean {
             PreparedStatement putServiceId = connection.prepareStatement("INSERT INTO service(host, port, description) VALUES(?, ?, ?)");
             putServiceId.setString(1, address);
             putServiceId.setInt(2, port);
-            putServiceId.setString(3, "");
+            putServiceId.setString(3, "''");
             putServiceId.executeUpdate();
 
             ResultSet result = getServiceId.executeQuery();
+            result.next();
             serviceId = result.getInt(1);
             return serviceId;
         } catch(Exception e) {
