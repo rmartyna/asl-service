@@ -31,6 +31,12 @@ public class CpuDaemon extends Daemon {
 
     private Integer fanSpeed;
 
+    private Double cpuUserUsage;
+
+    private Double cpuSystemUsage;
+
+    private Double cpuIowaitUsage;
+
     private static final Logger LOGGER = Logger.getLogger(CpuDaemon.class);
 
     @Override
@@ -81,6 +87,32 @@ public class CpuDaemon extends Daemon {
                     LOGGER.error("Error getting CPU fan speed", e);
                 }
 
+                LOGGER.info("Computing cpu usage");
+                try {
+                    Process iostatProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "iostat -yc 1 1"});
+                    String iostatOutput = IOUtils.toString(iostatProcess.getInputStream(), "UTF-8");
+                    LOGGER.info("iostat disk output:\n" + iostatOutput);
+
+                    Pattern pattern = Pattern.compile("\\s+([0-9,]+)\\s+[0-9,]+\\s+([0-9,]+)\\s+([0-9,]+).*");
+                    for (String line : iostatOutput.split("\n")) {
+                        try {
+                            Matcher matcher = pattern.matcher(line);
+                            matcher.find();
+                            cpuUserUsage = Double.parseDouble(matcher.group(1).replace(',', '.'));
+                            cpuSystemUsage = Double.parseDouble(matcher.group(2).replace(',', '.'));
+                            cpuIowaitUsage = Double.parseDouble(matcher.group(3).replace(',', '.'));
+
+                            LOGGER.info("CPU user usage: " + cpuUserUsage);
+                            LOGGER.info("CPU system usage: " + cpuSystemUsage);
+                            LOGGER.info("CPU iowait usage: " + cpuIowaitUsage);
+                        } catch (Exception e) {
+                            continue;
+                        }
+                    }
+                } catch(IOException e) {
+                    LOGGER.error("Error getting CPU usage", e);
+                }
+
                 LOGGER.info("Saving logs");
                 saveLogs();
             }
@@ -109,6 +141,14 @@ public class CpuDaemon extends Daemon {
             saveFanSpeed.setInt(2, fanSpeed);
             saveFanSpeed.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
             saveFanSpeed.executeUpdate();
+
+            PreparedStatement saveUsage = getConnection().prepareStatement("INSERT INTO cpu_usage(cpu_id, \"user\", system, iowait, date) VALUES(?,?,?,?,?)");
+            saveUsage.setInt(1, daemonId);
+            saveUsage.setDouble(2, cpuUserUsage);
+            saveUsage.setDouble(3, cpuSystemUsage);
+            saveUsage.setDouble(4, cpuIowaitUsage);
+            saveUsage.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+            saveUsage.executeUpdate();
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);
         }
