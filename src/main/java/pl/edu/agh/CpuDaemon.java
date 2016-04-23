@@ -67,7 +67,6 @@ public class CpuDaemon extends Daemon {
                 }
 
                 LOGGER.info("Computing speed of CPU fan");
-
                 try {
                     Process sensorsProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"fan\" -i"});
                     String sensorsOutput = IOUtils.toString(sensorsProcess.getInputStream(), "UTF-8");
@@ -79,7 +78,7 @@ public class CpuDaemon extends Daemon {
                     fanSpeed = Integer.parseInt(matcher.group(1));
                     LOGGER.info("Result fan speed: " + fanSpeed);
                 } catch(IOException e) {
-                    LOGGER.error("Getting CPU fan speed", e);
+                    LOGGER.error("Error getting CPU fan speed", e);
                 }
 
                 LOGGER.info("Saving logs");

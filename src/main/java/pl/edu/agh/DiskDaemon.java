@@ -1,16 +1,22 @@
 package pl.edu.agh;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by rmartyna on 21.04.16.
  */
+
+//TODO current implementation assumes that there is only one disk
 public class DiskDaemon extends Daemon {
 
     private Date startLoopTime;
@@ -21,9 +27,11 @@ public class DiskDaemon extends Daemon {
 
     private Double diskWrite;
 
-    private double[] partitionCurrent;
+    private Double[] partitionCurrent;
 
-    private double[] partitionMax;
+    private Double[] partitionMax;
+
+    private String[] partitionName;
 
     private static final Logger LOGGER = Logger.getLogger(DiskDaemon.class);
 
@@ -40,13 +48,60 @@ public class DiskDaemon extends Daemon {
                 LOGGER.info("Disk loop start");
                 startLoopTime = new Date();
 
-                //TODO set values
-                LOGGER.info("Disk read/write speed and partitions current/max usage");
-                diskRead = 20000.0;
-                diskWrite = 10000.0;
+                LOGGER.info("Computing disk read/write speed");
+                try {
+                    Process iostatProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "iostat -yd 1 1"});
+                    String iostatOutput = IOUtils.toString(iostatProcess.getInputStream(), "UTF-8");
+                    LOGGER.info("iostat disk output:\n" + iostatOutput);
 
-                partitionCurrent = new double[] {1000.0, 2000.0};
-                partitionMax = new double[] {100000.0, 200000.0};
+                    Pattern pattern = Pattern.compile("sda\\s+[0-9,]+\\s+([0-9,]+)\\s+([0-9,]+).*");
+                    for(String line : iostatOutput.split("\n")) {
+                        try {
+                            Matcher matcher = pattern.matcher(line);
+                            matcher.find();
+                            diskRead = Double.parseDouble(matcher.group(1).replace(',', '.'));
+                            diskWrite = Double.parseDouble(matcher.group(2).replace(',', '.'));
+                        } catch(Exception e) {
+                            continue;
+                        }
+                    }
+
+                    LOGGER.info("Result disk read: " + diskRead);
+                    LOGGER.info("Result disk write: " + diskWrite);
+
+                } catch(IOException e) {
+                    LOGGER.error("Error getting disk I/O", e);
+                }
+
+                LOGGER.info("Computing partition size");
+                try {
+                    Process dfProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "df | grep /dev/"});
+                    String dfOutput = IOUtils.toString(dfProcess.getInputStream(), "UTF-8");
+                    LOGGER.info("df output:\n" + dfOutput);
+
+                    Pattern pattern = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+(\\d+).*");
+
+                    ArrayList<Double> currentList = new ArrayList<Double>();
+                    ArrayList<Double> maxList = new ArrayList<Double>();
+                    ArrayList<String> nameList = new ArrayList<String>();
+                    for(String line : dfOutput.split("\n")) {
+                        Matcher matcher = pattern.matcher(line);
+                        matcher.find();
+                        nameList.add(matcher.group(1));
+                        maxList.add(Double.parseDouble(matcher.group(2)));
+                        currentList.add(Double.parseDouble(matcher.group(3)));
+                    }
+
+                    partitionCurrent = currentList.toArray(new Double[currentList.size()]);
+                    partitionMax = maxList.toArray(new Double[maxList.size()]);
+                    partitionName = nameList.toArray(new String[nameList.size()]);
+
+                    LOGGER.info("Partition name: " + Arrays.toString(partitionName));
+                    LOGGER.info("Partition current: " + Arrays.toString(partitionCurrent));
+                    LOGGER.info("Partition max: " + Arrays.toString(partitionMax));
+                } catch(IOException e) {
+                    LOGGER.error("Error getting partition info", e);
+                }
 
                 LOGGER.info("Saving logs");
                 saveLogs();
@@ -69,14 +124,16 @@ public class DiskDaemon extends Daemon {
             saveDiskUsage.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
             saveDiskUsage.executeUpdate();
 
+
             PreparedStatement savePartitionUsage = getConnection().prepareStatement("INSERT INTO partition(disk_id, name, current, max, date) VALUES(?,?,?,?,?)");
-            if(partitionMax.length != partitionCurrent.length) {
-                LOGGER.error("Partition current length is " + partitionCurrent.length + ", while partition max length is "
-                        + partitionMax.length + ". Could not save logs in the database");
+            if(partitionMax.length != partitionCurrent.length || partitionMax.length != partitionName.length) {
+                LOGGER.error("Partition current length is " + partitionCurrent.length + ", partition max length is "
+                        + partitionMax.length + ", partition name length is " + partitionName.length
+                        + ". Could not save logs in the database");
             }
             for(int i = 0; i < partitionCurrent.length; i++) {
                 savePartitionUsage.setInt(1, daemonId);
-                savePartitionUsage.setString(2, "No name " + (i+1));
+                savePartitionUsage.setString(2, partitionName[i]);
                 savePartitionUsage.setDouble(3, partitionCurrent[i]);
                 savePartitionUsage.setDouble(4, partitionMax[i]);
                 savePartitionUsage.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
