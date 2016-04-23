@@ -1,13 +1,22 @@
 package pl.edu.agh;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.apache.log4j.pattern.IntegerPatternConverter;
+import org.hyperic.sigar.Cpu;
+import org.hyperic.sigar.Mem;
+import org.hyperic.sigar.Sigar;
+import org.hyperic.sigar.SigarException;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Date;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by rmartyna on 18.04.16.
@@ -18,7 +27,7 @@ public class CpuDaemon extends Daemon {
 
     private Integer daemonId;
 
-    private double temperature;
+    private Double[] temperatures;
 
     private Integer fanSpeed;
 
@@ -30,16 +39,48 @@ public class CpuDaemon extends Daemon {
         daemonId = getDaemonId();
     }
 
+
     public void run() {
         while(true) {
             if(getEnabled()) {
-                LOGGER.info("Loop start");
+                LOGGER.info("CPU loop start");
                 startLoopTime = new Date();
 
-                //TODO set temp, and fan speed
-                LOGGER.info("Computing temperature and fan speed");
-                temperature = 50;
-                fanSpeed = 2000;
+                LOGGER.info("Computing temperature of CPU cores");
+                try {
+                    Process sensors = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"core [0-9]\" -i"});
+                    String sensorsOutput = IOUtils.toString(sensors.getInputStream(), "UTF-8");
+                    LOGGER.info("Sensors output for CPU temperature:\n" + sensorsOutput);
+
+                    Pattern pattern = Pattern.compile(".*\\+([0-9]+\\.[0-9]+).*\\(.*");
+                    List<Double> tempList = new ArrayList<Double>();
+                    for(String line : sensorsOutput.split("\n")) {
+                        Matcher matcher = pattern.matcher(line);
+                        matcher.find();
+                        tempList.add(Double.parseDouble(matcher.group(1)));
+                    }
+                    temperatures = tempList.toArray(new Double[tempList.size()]);
+                    LOGGER.info("Result temperature: " + Arrays.toString(temperatures));
+
+                } catch(IOException e) {
+                    LOGGER.error("Error getting CPU temperature", e);
+                }
+
+                LOGGER.info("Computing speed of CPU fan");
+
+                try {
+                    Process sensors = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"fan\" -i"});
+                    String sensorsOutput = IOUtils.toString(sensors.getInputStream(), "UTF-8");
+                    LOGGER.info("Sensors output for CPU fan speed:\n" + sensorsOutput);
+
+                    Pattern pattern = Pattern.compile(".*\\s+(\\d+) RPM.*");
+                    Matcher matcher = pattern.matcher(sensorsOutput);
+                    matcher.find();
+                    fanSpeed = Integer.parseInt(matcher.group(1));
+                    LOGGER.info("Result fan speed: " + fanSpeed);
+                } catch(IOException e) {
+                    LOGGER.error("Getting CPU fan speed", e);
+                }
 
                 LOGGER.info("Saving logs");
                 saveLogs();
@@ -48,24 +89,29 @@ public class CpuDaemon extends Daemon {
         }
     }
 
+    //TODO add configuration
     public void configure(Map<String, String> configuration) {
         LOGGER.info("Received configuration: " + configuration);
     }
 
     public void saveLogs() {
         try {
-            PreparedStatement saveTemp = getConnection().prepareStatement("INSERT INTO cpu_temp(cpu_id, core, value) VALUES(?,?,?)");
+            PreparedStatement saveTemp = getConnection().prepareStatement("INSERT INTO cpu_temp(cpu_id, core, value, date) VALUES(?,?,?,?)");
             saveTemp.setInt(1, daemonId);
-            saveTemp.setInt(2, 1);
-            saveTemp.setDouble(3, temperature);
-            saveTemp.executeUpdate();
+            for(int i = 0; i < temperatures.length; i++) {
+                saveTemp.setInt(2, i+1);
+                saveTemp.setDouble(3, temperatures[i]);
+                saveTemp.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+                saveTemp.executeUpdate();
+            }
 
-            PreparedStatement saveFanSpeed = getConnection().prepareStatement("INSERT INTO cpu_fan(cpu_id, speed) VALUES(?,?)");
+            PreparedStatement saveFanSpeed = getConnection().prepareStatement("INSERT INTO cpu_fan(cpu_id, speed, date) VALUES(?,?,?)");
             saveFanSpeed.setInt(1, daemonId);
             saveFanSpeed.setInt(2, fanSpeed);
+            saveFanSpeed.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
             saveFanSpeed.executeUpdate();
         } catch(Exception e) {
-            LOGGER.error("Could not save logs in ot the database", e);
+            LOGGER.error("Could not save logs in the database", e);
         }
     }
 
@@ -86,7 +132,7 @@ public class CpuDaemon extends Daemon {
 
             PreparedStatement putDaemonIdStatement = getConnection().prepareStatement("INSERT INTO cpu(service_id, description) VALUES(?, ?)");
             putDaemonIdStatement.setInt(1, getServiceId());
-            putDaemonIdStatement.setString(2, "''");
+            putDaemonIdStatement.setString(2, "No CPU info");
             putDaemonIdStatement.executeUpdate();
 
             ResultSet result = getDaemonIdStatement.executeQuery();

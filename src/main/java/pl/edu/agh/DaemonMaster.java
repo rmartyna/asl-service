@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by rmartyna on 18.04.16.
@@ -20,10 +23,12 @@ public class DaemonMaster implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         LOGGER.info("Starting daemons: ");
+        ExecutorService threadPool = Executors.newCachedThreadPool();
         for(Daemon daemon : daemons) {
-            LOGGER.info("Starting " + daemon.getName());
-            new Thread(daemon).run();
+            LOGGER.info("Executing " + daemon.getName());
+            threadPool.execute(daemon);
         }
+
     }
 
     public void configureSlaves(String configuration) {

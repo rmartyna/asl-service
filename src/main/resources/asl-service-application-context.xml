@@ -13,12 +13,36 @@
         <property name="daemons">
             <list value-type="pl.edu.agh.Daemon">
                 <ref bean="cpuDaemon"/>
+                <ref bean="gpuDaemon"/>
+                <ref bean="diskDaemon"/>
+                <ref bean="networkDaemon"/>
             </list>
         </property>
     </bean>
 
     <bean id="cpuDaemon" class="pl.edu.agh.CpuDaemon">
-        <property name="name" value="temp"/>
+        <property name="name" value="cpu"/>
+        <property name="sleepTime" value="60000"/>
+        <property name="enabled" value="true"/>
+        <property name="dbConnection" ref="dbConnection"/>
+    </bean>
+
+    <bean id="gpuDaemon" class="pl.edu.agh.GpuDaemon">
+        <property name="name" value="gpu"/>
+        <property name="sleepTime" value="60000"/>
+        <property name="enabled" value="true"/>
+        <property name="dbConnection" ref="dbConnection"/>
+    </bean>
+
+    <bean id="diskDaemon" class="pl.edu.agh.DiskDaemon">
+        <property name="name" value="disk"/>
+        <property name="sleepTime" value="60000"/>
+        <property name="enabled" value="true"/>
+        <property name="dbConnection" ref="dbConnection"/>
+    </bean>
+
+    <bean id="networkDaemon" class="pl.edu.agh.NetworkDaemon">
+        <property name="name" value="network"/>
         <property name="sleepTime" value="60000"/>
         <property name="enabled" value="true"/>
         <property name="dbConnection" ref="dbConnection"/>
