@@ -37,7 +37,7 @@
 
     <bean id="diskDaemon" class="pl.edu.agh.DiskDaemon">
         <property name="name" value="disk"/>
-        <property name="sleepTime" value="10000"/>
+        <property name="sleepTime" value="60000"/>
         <property name="enabled" value="true"/>
         <property name="dbConnection" ref="dbConnection"/>
     </bean>

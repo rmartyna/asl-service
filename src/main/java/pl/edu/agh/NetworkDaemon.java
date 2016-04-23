@@ -1,12 +1,16 @@
 package pl.edu.agh;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by rmartyna on 21.04.16.
@@ -15,9 +19,9 @@ public class NetworkDaemon extends Daemon {
 
     private Date startLoopTime;
 
-    private double download;
+    private Double download;
 
-    private double upload;
+    private Double upload;
 
     private static final Logger LOGGER = Logger.getLogger(NetworkDaemon.class);
 
@@ -34,9 +38,30 @@ public class NetworkDaemon extends Daemon {
                 startLoopTime = new Date();
 
                 //TODO set values
-                LOGGER.info("Computing network download/upload");
-                download = 1000.0;
-                upload = 200.0;
+                LOGGER.info("Computing network in/out");
+                try {
+                    Process ifstatProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "ifstat -Tb 1 1"});
+                    String ifstatOutput = IOUtils.toString(ifstatProcess.getInputStream(), "UTF-8");
+                    LOGGER.info("ifstat output:\n" + ifstatOutput);
+
+                    Pattern pattern = Pattern.compile(".*\\s+([0-9\\.]+)\\s+([0-9\\.]+).*");
+                    for(String line : ifstatOutput.split("\n")) {
+                        try {
+                            Matcher matcher = pattern.matcher(line);
+                            matcher.find();
+                            download = Double.parseDouble(matcher.group(1));
+                            upload = Double.parseDouble(matcher.group(2));
+                        } catch(Exception e) {
+                            continue;
+                        }
+                    }
+
+                    LOGGER.info("Result network download: " + download);
+                    LOGGER.info("Result network upload: " + upload);
+
+                } catch(IOException e) {
+                    LOGGER.error("Error getting network I/O", e);
+                }
 
                 LOGGER.info("Saving logs");
                 saveLogs();
