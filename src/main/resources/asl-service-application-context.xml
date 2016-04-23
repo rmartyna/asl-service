@@ -16,6 +16,7 @@
                 <ref bean="gpuDaemon"/>
                 <ref bean="diskDaemon"/>
                 <ref bean="networkDaemon"/>
+                <ref bean="memoryDaemon"/>
             </list>
         </property>
     </bean>
@@ -43,6 +44,13 @@
 
     <bean id="networkDaemon" class="pl.edu.agh.NetworkDaemon">
         <property name="name" value="network"/>
+        <property name="sleepTime" value="60000"/>
+        <property name="enabled" value="true"/>
+        <property name="dbConnection" ref="dbConnection"/>
+    </bean>
+
+    <bean id="memoryDaemon" class="pl.edu.agh.MemoryDaemon">
+        <property name="name" value="memory"/>
         <property name="sleepTime" value="60000"/>
         <property name="enabled" value="true"/>
         <property name="dbConnection" ref="dbConnection"/>

@@ -48,8 +48,8 @@ public class CpuDaemon extends Daemon {
 
                 LOGGER.info("Computing temperature of CPU cores");
                 try {
-                    Process sensors = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"core [0-9]\" -i"});
-                    String sensorsOutput = IOUtils.toString(sensors.getInputStream(), "UTF-8");
+                    Process sensorsProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"core [0-9]\" -i"});
+                    String sensorsOutput = IOUtils.toString(sensorsProcess.getInputStream(), "UTF-8");
                     LOGGER.info("Sensors output for CPU temperature:\n" + sensorsOutput);
 
                     Pattern pattern = Pattern.compile(".*\\+([0-9]+\\.[0-9]+).*\\(.*");
@@ -69,8 +69,8 @@ public class CpuDaemon extends Daemon {
                 LOGGER.info("Computing speed of CPU fan");
 
                 try {
-                    Process sensors = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"fan\" -i"});
-                    String sensorsOutput = IOUtils.toString(sensors.getInputStream(), "UTF-8");
+                    Process sensorsProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"fan\" -i"});
+                    String sensorsOutput = IOUtils.toString(sensorsProcess.getInputStream(), "UTF-8");
                     LOGGER.info("Sensors output for CPU fan speed:\n" + sensorsOutput);
 
                     Pattern pattern = Pattern.compile(".*\\s+(\\d+) RPM.*");
