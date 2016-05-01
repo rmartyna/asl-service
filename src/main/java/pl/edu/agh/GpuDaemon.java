@@ -11,9 +11,6 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
 
-/**
- * Created by rmartyna on 21.04.16.
- */
 public class GpuDaemon extends Daemon {
 
     private Date startLoopTime;
@@ -50,11 +47,6 @@ public class GpuDaemon extends Daemon {
             }
             waitForNextLoop();
         }
-    }
-
-    //TODO add configuration
-    public void configure(Map<String, String> configuration) {
-        LOGGER.info("Received configuration: " + configuration);
     }
 
     public void saveLogs() {

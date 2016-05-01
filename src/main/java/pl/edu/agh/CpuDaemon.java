@@ -18,9 +18,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by rmartyna on 18.04.16.
- */
 public class CpuDaemon extends Daemon {
 
     private Date startLoopTime;
@@ -39,10 +36,12 @@ public class CpuDaemon extends Daemon {
 
     private static final Logger LOGGER = Logger.getLogger(CpuDaemon.class);
 
+    //TODO initialize configuration map with spring in bean with parameters from config file
     @Override
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
         daemonId = getDaemonId();
+
     }
 
 
@@ -106,7 +105,6 @@ public class CpuDaemon extends Daemon {
                             LOGGER.info("CPU system usage: " + cpuSystemUsage);
                             LOGGER.info("CPU iowait usage: " + cpuIowaitUsage);
                         } catch (Exception e) {
-                            continue;
                         }
                     }
                 } catch(IOException e) {
@@ -120,35 +118,38 @@ public class CpuDaemon extends Daemon {
         }
     }
 
-    //TODO add configuration
-    public void configure(Map<String, String> configuration) {
-        LOGGER.info("Received configuration: " + configuration);
-    }
-
     public void saveLogs() {
         try {
             PreparedStatement saveTemp = getConnection().prepareStatement("INSERT INTO cpu_temp(cpu_id, core, value, date) VALUES(?,?,?,?)");
             saveTemp.setInt(1, daemonId);
             for(int i = 0; i < temperatures.length; i++) {
-                saveTemp.setInt(2, i+1);
-                saveTemp.setDouble(3, temperatures[i]);
-                saveTemp.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-                saveTemp.executeUpdate();
+                if(temperatures[i] >= getConfiguration().get("tempMin") && temperatures[i] <= getConfiguration().get("tempMax")) {
+                    saveTemp.setInt(2, i+1);
+                    saveTemp.setDouble(3, temperatures[i]);
+                    saveTemp.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+                    saveTemp.executeUpdate();
+                }
             }
 
-            PreparedStatement saveFanSpeed = getConnection().prepareStatement("INSERT INTO cpu_fan(cpu_id, speed, date) VALUES(?,?,?)");
-            saveFanSpeed.setInt(1, daemonId);
-            saveFanSpeed.setInt(2, fanSpeed);
-            saveFanSpeed.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            saveFanSpeed.executeUpdate();
+            if(fanSpeed >= getConfiguration().get("fanMin") && fanSpeed <= getConfiguration().get("fanMax")) {
+                PreparedStatement saveFanSpeed = getConnection().prepareStatement("INSERT INTO cpu_fan(cpu_id, speed, date) VALUES(?,?,?)");
+                saveFanSpeed.setInt(1, daemonId);
+                saveFanSpeed.setInt(2, fanSpeed);
+                saveFanSpeed.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+                saveFanSpeed.executeUpdate();
+            }
 
-            PreparedStatement saveUsage = getConnection().prepareStatement("INSERT INTO cpu_usage(cpu_id, \"user\", system, iowait, date) VALUES(?,?,?,?,?)");
-            saveUsage.setInt(1, daemonId);
-            saveUsage.setDouble(2, cpuUserUsage);
-            saveUsage.setDouble(3, cpuSystemUsage);
-            saveUsage.setDouble(4, cpuIowaitUsage);
-            saveUsage.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
-            saveUsage.executeUpdate();
+            Double overallUsage = cpuIowaitUsage + cpuSystemUsage + cpuUserUsage;
+            if(overallUsage >= getConfiguration().get("usageMin") && overallUsage <= getConfiguration().get("usageMax")) {
+                PreparedStatement saveUsage = getConnection().prepareStatement("INSERT INTO cpu_usage(cpu_id, \"user\", system, iowait, date) VALUES(?,?,?,?,?)");
+                saveUsage.setInt(1, daemonId);
+                saveUsage.setDouble(2, cpuUserUsage);
+                saveUsage.setDouble(3, cpuSystemUsage);
+                saveUsage.setDouble(4, cpuIowaitUsage);
+                saveUsage.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+                saveUsage.executeUpdate();
+            }
+
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);
         }

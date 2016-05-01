@@ -12,10 +12,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by rmartyna on 21.04.16.
- */
-
 //TODO current implementation assumes that there is only one disk
 public class DiskDaemon extends Daemon {
 
@@ -39,6 +35,7 @@ public class DiskDaemon extends Daemon {
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
         daemonId = getDaemonId();
+
     }
 
 
@@ -62,7 +59,6 @@ public class DiskDaemon extends Daemon {
                             diskRead = Double.parseDouble(matcher.group(1).replace(',', '.'));
                             diskWrite = Double.parseDouble(matcher.group(2).replace(',', '.'));
                         } catch(Exception e) {
-                            continue;
                         }
                     }
 
@@ -110,19 +106,19 @@ public class DiskDaemon extends Daemon {
         }
     }
 
-    //TODO add configuration
-    public void configure(Map<String, String> configuration) {
-        LOGGER.info("Received configuration: " + configuration);
-    }
-
     public void saveLogs() {
         try {
-            PreparedStatement saveDiskUsage = getConnection().prepareStatement("INSERT INTO disk_usage(disk_id, read, write, date) VALUES(?,?,?,?)");
-            saveDiskUsage.setInt(1, daemonId);
-            saveDiskUsage.setDouble(2, diskRead);
-            saveDiskUsage.setDouble(3, diskWrite);
-            saveDiskUsage.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-            saveDiskUsage.executeUpdate();
+
+            if((diskRead >= getConfiguration().get("readMin") && diskRead <= getConfiguration().get("readMax"))
+            || (diskWrite >= getConfiguration().get("writeMin") && diskWrite <= getConfiguration().get("writeMax"))) {
+                PreparedStatement saveDiskUsage = getConnection().prepareStatement("INSERT INTO disk_usage(disk_id, read, write, date) VALUES(?,?,?,?)");
+
+                saveDiskUsage.setInt(1, daemonId);
+                saveDiskUsage.setDouble(2, diskRead);
+                saveDiskUsage.setDouble(3, diskWrite);
+                saveDiskUsage.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+                saveDiskUsage.executeUpdate();
+            }
 
 
             PreparedStatement savePartitionUsage = getConnection().prepareStatement("INSERT INTO partition(disk_id, name, current, max, date) VALUES(?,?,?,?,?)");

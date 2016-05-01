@@ -9,9 +9,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-/**
- * Created by rmartyna on 19.04.16.
- */
 public class DbConnection implements InitializingBean {
 
     private Connection connection;

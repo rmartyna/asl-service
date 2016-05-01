@@ -11,9 +11,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Created by rmartyna on 18.04.16.
- */
 public class DaemonMaster implements InitializingBean {
 
     private List<Daemon> daemons;
@@ -31,8 +28,8 @@ public class DaemonMaster implements InitializingBean {
 
     }
 
-    public void configureSlaves(String configuration) {
-        LOGGER.info("Configuring daemons");
+    public void configureSlaves(String configuration) throws IllegalArgumentException {
+        LOGGER.info("Configuring daemons: ");
 
         Map<String, Map<String, String>> daemonNameToConfigurationMap
                 = new HashMap<String, Map<String, String>>();
@@ -49,16 +46,21 @@ public class DaemonMaster implements InitializingBean {
             }
         }
 
-        LOGGER.info("Configurations for daemons: ");
         for(String name : daemonNameToConfigurationMap.keySet())
             LOGGER.info(name + ": " + daemonNameToConfigurationMap.get(name));
 
-        for (Daemon daemon : daemons) {
-            Set<String> keySet = daemonNameToConfigurationMap.keySet();
-            for (String key : keySet) {
-                if (daemon.getName().equalsIgnoreCase(key))
+
+        for(String key: daemonNameToConfigurationMap.keySet()) {
+            boolean configured = false;
+            for (Daemon daemon : daemons) {
+                if (daemon.getName().equalsIgnoreCase(key)) {
                     daemon.configure(daemonNameToConfigurationMap.get(key));
+                    configured = true;
+                    break;
+                }
             }
+            if(!configured)
+                throw new IllegalArgumentException("Invalid daemon name: " + key);
         }
     }
 

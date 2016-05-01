@@ -10,9 +10,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by rmartyna on 23.04.16.
- */
 public class MemoryDaemon extends Daemon {
 
     private Date startLoopTime;
@@ -60,19 +57,16 @@ public class MemoryDaemon extends Daemon {
         }
     }
 
-    //TODO add configuration
-    public void configure(Map<String, String> configuration) {
-        LOGGER.info("Received configuration: " + configuration);
-    }
-
     public void saveLogs() {
         try {
-            PreparedStatement saveMemoryUsage = getConnection().prepareStatement("INSERT INTO memory_usage(service_id, current, max, date) VALUES(?,?,?,?)");
-            saveMemoryUsage.setInt(1, getServiceId());
-            saveMemoryUsage.setDouble(2, current);
-            saveMemoryUsage.setDouble(3, max);
-            saveMemoryUsage.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-            saveMemoryUsage.executeUpdate();
+            if(current >= getConfiguration().get("memoryMin") && current <= getConfiguration().get("memoryMax")) {
+                PreparedStatement saveMemoryUsage = getConnection().prepareStatement("INSERT INTO memory_usage(service_id, current, max, date) VALUES(?,?,?,?)");
+                saveMemoryUsage.setInt(1, getServiceId());
+                saveMemoryUsage.setDouble(2, current);
+                saveMemoryUsage.setDouble(3, max);
+                saveMemoryUsage.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+                saveMemoryUsage.executeUpdate();
+            }
 
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);

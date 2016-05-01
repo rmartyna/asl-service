@@ -4,13 +4,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-/**
- * Created by rmartyna on 18.04.16.
- */
 public class ConsoleConnector implements InitializingBean, Runnable {
 
     private Integer port = 30303;
@@ -33,19 +33,24 @@ public class ConsoleConnector implements InitializingBean, Runnable {
                 Socket client = serverSocket.accept();
                 LOGGER.info("Message received from: " + client.getInetAddress());
 
-                PrintWriter out = new PrintWriter(client.getOutputStream());
-                out.print("HTTP/1.1 200 \r\n");
-                out.print("Content-Type: text/plain\r\n");
-                out.print("Connection: close\r\n");
-                out.print("\r\n");
-                out.close();
+                BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+                DataOutputStream out = new DataOutputStream(client.getOutputStream());
 
-                String message = IOUtils.toString(client.getInputStream(), "UTF-8");
+                String message = in.readLine();
                 LOGGER.info("Received configuration: " + message);
 
+                try {
+                    daemonMaster.configureSlaves(message);
+                    out.writeBytes("HTTP/1.1 200 \r\n");
+                } catch(Exception e) {
+                    LOGGER.error("Invalid daemons configuration", e);
+                    out.writeBytes("HTTP/1.1 400 \r\n");
+                }
+
+                in.close();
+                out.close();
                 client.close();
 
-                daemonMaster.configureSlaves(message);
             } catch(Exception e) {
                 e.printStackTrace();
             }

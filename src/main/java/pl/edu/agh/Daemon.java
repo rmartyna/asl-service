@@ -1,18 +1,15 @@
 package pl.edu.agh;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.naming.spi.InitialContextFactory;
 import java.sql.Connection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by rmartyna on 18.04.16.
- */
 public abstract class Daemon implements InitializingBean, Runnable {
-
-    private Integer sleepTime;
 
     private String name;
 
@@ -24,9 +21,11 @@ public abstract class Daemon implements InitializingBean, Runnable {
 
     private Integer serviceId;
 
-    public abstract void run();
+    private Map<String, Integer> configuration = new HashMap<String, Integer>();
 
-    public abstract void configure(Map<String, String> configuration);
+    private static final Logger LOGGER = Logger.getLogger(Daemon.class);
+
+    public abstract void run();
 
     public abstract void saveLogs();
 
@@ -36,8 +35,6 @@ public abstract class Daemon implements InitializingBean, Runnable {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        if (sleepTime == null)
-            throw new IllegalArgumentException("Sleep time property cannot be null");
 
         if (name == null)
             throw new IllegalArgumentException("Name property cannot be null");
@@ -48,26 +45,45 @@ public abstract class Daemon implements InitializingBean, Runnable {
         if(dbConnection == null)
             throw new IllegalArgumentException("Db connection property cannot be null");
 
+        if(configuration == null)
+            throw new IllegalArgumentException("Configuration property cannot be null");
+
+        if(configuration.get("sleepTime") == null)
+            throw new IllegalArgumentException("Configuration must contain sleepTime parameter");
+
         connection = dbConnection.getConnection();
         serviceId = dbConnection.getServiceId();
     }
 
     public void waitForNextLoop() {
         try {
-            long waitTime = getStartLoopTime().getTime() + sleepTime;
-            while (System.currentTimeMillis() < waitTime)
+
+            while (true) {
+                long waitTime = getStartLoopTime().getTime() + getConfiguration().get("sleepTime");
                 Thread.sleep(1000);
+                if(System.currentTimeMillis() > waitTime)
+                    break;
+            }
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    public void setSleepTime(Integer sleepTime) {
-        this.sleepTime = sleepTime;
-    }
+    public void configure(Map<String, String> newConfiguration) throws IllegalArgumentException {
+        LOGGER.info("Name: " + getName() + ", received configuration: " + newConfiguration);
 
-    public Integer getSleepTime() {
-        return sleepTime;
+        for(String attribute: newConfiguration.keySet()) {
+            if(configuration.containsKey(attribute)) {
+                try {
+                    configuration.put(attribute, Integer.parseInt(newConfiguration.get(attribute)));
+                } catch(Exception e) {
+                    throw new IllegalArgumentException("Could not update attribute '" + attribute + "'.", e);
+                }
+            } else {
+                throw new IllegalArgumentException("Attribute '" + attribute + "' is not configurable.");
+            }
+        }
     }
 
     public void setName(String name) {
@@ -97,4 +113,8 @@ public abstract class Daemon implements InitializingBean, Runnable {
     public Integer getServiceId() {
         return serviceId;
     }
+
+    public Map<String, Integer> getConfiguration() { return configuration; }
+
+    public void setConfiguration(Map<String, Integer> configuration) { this.configuration = configuration; }
 }

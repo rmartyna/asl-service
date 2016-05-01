@@ -12,6 +12,7 @@
 
 
     <bean id="consoleConnector" class="pl.edu.agh.ConsoleConnector">
+        <property name="daemonMaster" ref="daemonMaster"/>
     </bean>
 
     <bean id="daemonMaster" class="pl.edu.agh.DaemonMaster">
@@ -28,37 +29,73 @@
 
     <bean id="cpuDaemon" class="pl.edu.agh.CpuDaemon">
         <property name="name" value="cpu"/>
-        <property name="sleepTime" value="60000"/>
         <property name="enabled" value="true"/>
         <property name="dbConnection" ref="dbConnection"/>
+        <property name="configuration">
+            <map>
+                <entry key="sleepTime" value="60000"/>
+                <entry key="tempMin" value="0"/>
+                <entry key="tempMax" value="1000"/>
+                <entry key="usageMin" value="0"/>
+                <entry key="usageMax" value="1000"/>
+                <entry key="fanMin" value="0"/>
+                <entry key="fanMax" value="10000"/>
+            </map>
+        </property>
     </bean>
 
     <bean id="gpuDaemon" class="pl.edu.agh.GpuDaemon">
         <property name="name" value="gpu"/>
-        <property name="sleepTime" value="60000"/>
         <property name="enabled" value="true"/>
         <property name="dbConnection" ref="dbConnection"/>
+        <property name="configuration">
+            <map>
+                <entry key="sleepTime" value="60000"/>
+            </map>
+        </property>
     </bean>
 
     <bean id="diskDaemon" class="pl.edu.agh.DiskDaemon">
         <property name="name" value="disk"/>
-        <property name="sleepTime" value="60000"/>
         <property name="enabled" value="true"/>
         <property name="dbConnection" ref="dbConnection"/>
+        <property name="configuration">
+            <map>
+                <entry key="sleepTime" value="60000"/>
+                <entry key="readMin" value="0"/>
+                <entry key="readMax" value="1000000"/>
+                <entry key="writeMin" value="0"/>
+                <entry key="writeMax" value="1000000"/>
+            </map>
+        </property>
     </bean>
 
     <bean id="networkDaemon" class="pl.edu.agh.NetworkDaemon">
         <property name="name" value="network"/>
-        <property name="sleepTime" value="60000"/>
         <property name="enabled" value="true"/>
         <property name="dbConnection" ref="dbConnection"/>
+        <property name="configuration">
+            <map>
+                <entry key="sleepTime" value="60000"/>
+                <entry key="downloadMin" value="0"/>
+                <entry key="downloadMax" value="100000"/>
+                <entry key="uploadMin" value="0"/>
+                <entry key="uploadMax" value="1000000"/>
+            </map>
+        </property>
     </bean>
 
     <bean id="memoryDaemon" class="pl.edu.agh.MemoryDaemon">
         <property name="name" value="memory"/>
-        <property name="sleepTime" value="60000"/>
         <property name="enabled" value="true"/>
         <property name="dbConnection" ref="dbConnection"/>
+        <property name="configuration">
+            <map>
+                <entry key="sleepTime" value="60000"/>
+                <entry key="memoryMin" value="0"/>
+                <entry key="memoryMax" value="100000000"/>
+            </map>
+        </property>
     </bean>
 
     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">

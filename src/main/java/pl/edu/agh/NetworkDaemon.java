@@ -8,13 +8,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by rmartyna on 21.04.16.
- */
 public class NetworkDaemon extends Daemon {
 
     private Date startLoopTime;
@@ -52,7 +50,6 @@ public class NetworkDaemon extends Daemon {
                             download = Double.parseDouble(matcher.group(1));
                             upload = Double.parseDouble(matcher.group(2));
                         } catch(Exception e) {
-                            continue;
                         }
                     }
 
@@ -70,19 +67,17 @@ public class NetworkDaemon extends Daemon {
         }
     }
 
-    //TODO add configuration
-    public void configure(Map<String, String> configuration) {
-        LOGGER.info("Received configuration: " + configuration);
-    }
-
     public void saveLogs() {
         try {
-            PreparedStatement saveNetworkUsage = getConnection().prepareStatement("INSERT INTO network_usage(service_id, download, upload, date) VALUES(?,?,?,?)");
-            saveNetworkUsage.setInt(1, getServiceId());
-            saveNetworkUsage.setDouble(2, download);
-            saveNetworkUsage.setDouble(3, upload);
-            saveNetworkUsage.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-            saveNetworkUsage.executeUpdate();
+            if((download >= getConfiguration().get("downloadMin") && download <= getConfiguration().get("downloadMax"))
+            || (upload >= getConfiguration().get("uploadMin") && upload <= getConfiguration().get("uploadMax"))) {
+                PreparedStatement saveNetworkUsage = getConnection().prepareStatement("INSERT INTO network_usage(service_id, download, upload, date) VALUES(?,?,?,?)");
+                saveNetworkUsage.setInt(1, getServiceId());
+                saveNetworkUsage.setDouble(2, download);
+                saveNetworkUsage.setDouble(3, upload);
+                saveNetworkUsage.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+                saveNetworkUsage.executeUpdate();
+            }
 
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);
