@@ -28,9 +28,9 @@ public class MemoryDaemon extends Daemon {
 
     public void run() {
         while(true) {
+            startLoopTime = new Date();
             if(getConfiguration().get("enabled") != 0) {
                 LOGGER.info("Memory loop start");
-                startLoopTime = new Date();
 
                 LOGGER.info("Computing current/max memory usage");
                 try {
@@ -80,6 +80,11 @@ public class MemoryDaemon extends Daemon {
     public Integer getDaemonId() {
         LOGGER.error("getDaemonId method is not implemented for MemoryDaemon");
         return null;
+    }
+
+    @Override
+    public String operation(String name, String value) {
+        throw new IllegalArgumentException("No available operations");
     }
 
 }

@@ -23,6 +23,7 @@
                 <ref bean="diskDaemon"/>
                 <ref bean="networkDaemon"/>
                 <ref bean="memoryDaemon"/>
+                <ref bean="systemLogDaemon"/>
             </list>
         </property>
     </bean>
@@ -96,6 +97,34 @@
                 <entry key="memoryMax" value="100000000"/>
             </map>
         </property>
+    </bean>
+
+    <bean id="systemLogDaemon" class="pl.edu.agh.SystemLogDaemon">
+        <property name="name" value="syslog"/>
+        <property name="dbConnection" ref="dbConnection"/>
+        <property name="configuration">
+            <map>
+                <entry key="sleepTime" value="600000"/>
+                <entry key="enabled" value="1"/>
+            </map>
+        </property>
+        <property name="operations">
+            <list value-type="java.lang.String">
+                <value>addLog</value>
+                <value>removeLog</value>
+                <value>listLogs</value>
+            </list>
+        </property>
+        <property name="systemLogs">
+            <list value-type="pl.edu.agh.SystemLog">
+                <ref bean="syslogSystemLog"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="syslogSystemLog" class="pl.edu.agh.SystemLog">
+        <property name="filePath" value="/var/log/syslog"/>
+        <property name="dbConnection" ref="dbConnection"/>
     </bean>
 
     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">

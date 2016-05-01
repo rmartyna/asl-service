@@ -2,12 +2,11 @@ package pl.edu.agh;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.ListableBeanFactory;
 
 import javax.naming.spi.InitialContextFactory;
 import java.sql.Connection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public abstract class Daemon implements InitializingBean, Runnable {
 
@@ -21,6 +20,8 @@ public abstract class Daemon implements InitializingBean, Runnable {
 
     private Map<String, Integer> configuration = new HashMap<String, Integer>();
 
+    private List<String> operations = new LinkedList<String>();
+
     private static final Logger LOGGER = Logger.getLogger(Daemon.class);
 
     public abstract void run();
@@ -30,6 +31,8 @@ public abstract class Daemon implements InitializingBean, Runnable {
     public abstract Date getStartLoopTime();
 
     public abstract Integer getDaemonId();
+
+    public abstract String operation(String name, String value);
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -72,7 +75,9 @@ public abstract class Daemon implements InitializingBean, Runnable {
         LOGGER.info("Name: " + getName() + ", received configuration: " + newConfiguration);
 
         for(String attribute: newConfiguration.keySet()) {
-            if(configuration.containsKey(attribute)) {
+            if(operations.contains(attribute)) {
+                operation(attribute, newConfiguration.get(attribute));
+            } else if(configuration.containsKey(attribute)) {
                 try {
                     configuration.put(attribute, Integer.parseInt(newConfiguration.get(attribute)));
                 } catch(Exception e) {
@@ -107,4 +112,8 @@ public abstract class Daemon implements InitializingBean, Runnable {
     public Map<String, Integer> getConfiguration() { return configuration; }
 
     public void setConfiguration(Map<String, Integer> configuration) { this.configuration = configuration; }
+
+    public List<String> getOperations() { return operations; }
+
+    public void setOperations(List<String> operations) { this.operations = operations; }
 }

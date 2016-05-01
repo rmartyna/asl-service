@@ -41,9 +41,9 @@ public class DiskDaemon extends Daemon {
 
     public void run() {
         while(true) {
+            startLoopTime = new Date();
             if(getConfiguration().get("enabled") != 0) {
                 LOGGER.info("Disk loop start");
-                startLoopTime = new Date();
 
                 LOGGER.info("Computing disk read/write speed");
                 try {
@@ -167,5 +167,10 @@ public class DiskDaemon extends Daemon {
             LOGGER.error("Could not put disk information into database", e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String operation(String name, String value) {
+        throw new IllegalArgumentException("No available operations");
     }
 }

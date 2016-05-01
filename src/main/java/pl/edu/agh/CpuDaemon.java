@@ -44,12 +44,11 @@ public class CpuDaemon extends Daemon {
 
     }
 
-
     public void run() {
         while(true) {
+            startLoopTime = new Date();
             if(getConfiguration().get("enabled") != 0) {
                 LOGGER.info("CPU loop start");
-                startLoopTime = new Date();
 
                 LOGGER.info("Computing temperature of CPU cores");
                 try {
@@ -182,5 +181,10 @@ public class CpuDaemon extends Daemon {
             LOGGER.error("Could not put cpu information into database", e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String operation(String name, String value) {
+        throw new IllegalArgumentException("No available operations");
     }
 }

@@ -31,11 +31,10 @@ public class NetworkDaemon extends Daemon {
 
     public void run() {
         while(true) {
+            startLoopTime = new Date();
             if(getConfiguration().get("enabled") != 0) {
                 LOGGER.info("Network loop start");
-                startLoopTime = new Date();
 
-                //TODO set values
                 LOGGER.info("Computing network in/out");
                 try {
                     Process ifstatProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "ifstat -Tb 1 1"});
@@ -91,6 +90,11 @@ public class NetworkDaemon extends Daemon {
     public Integer getDaemonId() {
         LOGGER.error("getDaemonId method is not implemented for NetworkDaemon");
         return null;
+    }
+
+    @Override
+    public String operation(String name, String value) {
+        throw new IllegalArgumentException("No available operations");
     }
 
 }

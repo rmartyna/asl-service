@@ -92,4 +92,13 @@ CREATE TABLE IF NOT EXISTS memory_usage (
   current NUMERIC(15,3) NOT NULL,
   max NUMERIC(15,3) NOT NULL,
   date TIMESTAMP NOT NULL
-)
+);
+
+CREATE TABLE IF NOT EXISTS system_logs (
+  id SERIAL PRIMARY KEY,
+  service_id INTEGER REFERENCES service,
+  file_path TEXT NOT NULL,
+  log TEXT NOT NULL,
+  file_number INTEGER NOT NULL,
+  date TIMESTAMP NOT NULL
+);
