@@ -4,14 +4,9 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class SystemLog implements InitializingBean {
 

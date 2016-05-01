@@ -1,15 +1,9 @@
 package pl.edu.agh;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class SystemLogDaemon extends Daemon {
 

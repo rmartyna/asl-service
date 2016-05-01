@@ -2,9 +2,7 @@ package pl.edu.agh;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.ListableBeanFactory;
 
-import javax.naming.spi.InitialContextFactory;
 import java.sql.Connection;
 import java.util.*;
 

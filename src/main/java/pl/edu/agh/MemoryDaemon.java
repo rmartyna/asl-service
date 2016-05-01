@@ -6,7 +6,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

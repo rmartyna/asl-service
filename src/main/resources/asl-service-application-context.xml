@@ -118,12 +118,36 @@
         <property name="systemLogs">
             <list value-type="pl.edu.agh.SystemLog">
                 <ref bean="syslogSystemLog"/>
+                <ref bean="kernSystemLog"/>
+                <ref bean="authSystemLog"/>
+                <ref bean="bootSystemLog"/>
+                <ref bean="dmesgSystemLog"/>
             </list>
         </property>
     </bean>
 
     <bean id="syslogSystemLog" class="pl.edu.agh.SystemLog">
         <property name="filePath" value="/var/log/syslog"/>
+        <property name="dbConnection" ref="dbConnection"/>
+    </bean>
+
+    <bean id="kernSystemLog" class="pl.edu.agh.SystemLog">
+        <property name="filePath" value="/var/log/kern.log"/>
+        <property name="dbConnection" ref="dbConnection"/>
+    </bean>
+
+    <bean id="authSystemLog" class="pl.edu.agh.SystemLog">
+        <property name="filePath" value="/var/log/auth.log"/>
+        <property name="dbConnection" ref="dbConnection"/>
+    </bean>
+
+    <bean id="bootSystemLog" class="pl.edu.agh.SystemLog">
+        <property name="filePath" value="/var/log/boot.log"/>
+        <property name="dbConnection" ref="dbConnection"/>
+    </bean>
+
+    <bean id="dmesgSystemLog" class="pl.edu.agh.SystemLog">
+        <property name="filePath" value="/var/log/dmesg"/>
         <property name="dbConnection" ref="dbConnection"/>
     </bean>
 

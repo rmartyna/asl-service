@@ -1,15 +1,11 @@
 package pl.edu.agh;
 
 import org.apache.log4j.Logger;
-import org.hyperic.sigar.Cpu;
-import org.hyperic.sigar.Sigar;
-import org.hyperic.sigar.SigarException;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.Map;
 
 public class GpuDaemon extends Daemon {
 
