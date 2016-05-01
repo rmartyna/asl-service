@@ -41,7 +41,7 @@ public class DiskDaemon extends Daemon {
 
     public void run() {
         while(true) {
-            if(getEnabled()) {
+            if(getConfiguration().get("enabled") != 0) {
                 LOGGER.info("Disk loop start");
                 startLoopTime = new Date();
 

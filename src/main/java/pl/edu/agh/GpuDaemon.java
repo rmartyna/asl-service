@@ -32,7 +32,7 @@ public class GpuDaemon extends Daemon {
 
     public void run() {
         while(true) {
-            if(getEnabled()) {
+            if(getConfiguration().get("enabled") != 0) {
                 LOGGER.info("GPU loop start");
                 startLoopTime = new Date();
 

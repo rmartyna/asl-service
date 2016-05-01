@@ -28,7 +28,7 @@ public class MemoryDaemon extends Daemon {
 
     public void run() {
         while(true) {
-            if(getEnabled()) {
+            if(getConfiguration().get("enabled") != 0) {
                 LOGGER.info("Memory loop start");
                 startLoopTime = new Date();
 

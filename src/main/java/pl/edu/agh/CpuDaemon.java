@@ -47,7 +47,7 @@ public class CpuDaemon extends Daemon {
 
     public void run() {
         while(true) {
-            if(getEnabled()) {
+            if(getConfiguration().get("enabled") != 0) {
                 LOGGER.info("CPU loop start");
                 startLoopTime = new Date();
 

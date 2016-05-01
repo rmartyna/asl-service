@@ -13,8 +13,6 @@ public abstract class Daemon implements InitializingBean, Runnable {
 
     private String name;
 
-    private Boolean enabled;
-
     private DbConnection dbConnection;
 
     private Connection connection;
@@ -39,9 +37,6 @@ public abstract class Daemon implements InitializingBean, Runnable {
         if (name == null)
             throw new IllegalArgumentException("Name property cannot be null");
 
-        if (enabled == null)
-            throw new IllegalArgumentException("Enabled property cannot be null");
-
         if(dbConnection == null)
             throw new IllegalArgumentException("Db connection property cannot be null");
 
@@ -50,6 +45,9 @@ public abstract class Daemon implements InitializingBean, Runnable {
 
         if(configuration.get("sleepTime") == null)
             throw new IllegalArgumentException("Configuration must contain sleepTime parameter");
+
+        if(configuration.get("enabled") == null)
+            throw new IllegalArgumentException("Configuration must contain enabled parameter");
 
         connection = dbConnection.getConnection();
         serviceId = dbConnection.getServiceId();
@@ -92,14 +90,6 @@ public abstract class Daemon implements InitializingBean, Runnable {
 
     public String getName() {
         return name;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
     }
 
     public void setDbConnection(DbConnection dbConnection) {
