@@ -15,7 +15,9 @@ public class DbConnection implements InitializingBean {
 
     private DataSource dataSource;
 
-    private Integer port = 30303;
+    private String host;
+
+    private Integer port;
 
     private Integer serviceId;
 
@@ -25,6 +27,12 @@ public class DbConnection implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         if(dataSource == null)
             throw new IllegalArgumentException("Data source property cannot be null");
+
+        if(host == null)
+            throw new IllegalArgumentException("Host property cannot be null");
+
+        if(port == null)
+            throw new IllegalArgumentException("Port property cannot be null");
 
         connection = dataSource.getConnection();
     }
@@ -42,13 +50,10 @@ public class DbConnection implements InitializingBean {
             return serviceId;
 
         try {
-            String address = InetAddress.getLocalHost().toString();
+            String description = InetAddress.getLocalHost().toString();
+            LOGGER.info("Description: " + description);
 
-            LOGGER.info("address: " + address);
-            LOGGER.info("port: " + port);
-
-
-            PreparedStatement getServiceId = connection.prepareStatement("SELECT id FROM service WHERE host='" + address + "' AND PORT=" + port);
+            PreparedStatement getServiceId = connection.prepareStatement("SELECT id FROM service WHERE host='" + host + "' AND PORT=" + port);
             try {
                 ResultSet result = getServiceId.executeQuery();
                 result.next();
@@ -59,9 +64,9 @@ public class DbConnection implements InitializingBean {
             }
 
             PreparedStatement putServiceId = connection.prepareStatement("INSERT INTO service(host, port, description) VALUES(?, ?, ?)");
-            putServiceId.setString(1, address);
+            putServiceId.setString(1, host);
             putServiceId.setInt(2, port);
-            putServiceId.setString(3, "''");
+            putServiceId.setString(3, description);
             putServiceId.executeUpdate();
 
             ResultSet result = getServiceId.executeQuery();
@@ -72,5 +77,13 @@ public class DbConnection implements InitializingBean {
             LOGGER.error("Could not put service information into database", e);
             throw new RuntimeException();
         }
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public void setPort(Integer port) {
+        this.port = port;
     }
 }

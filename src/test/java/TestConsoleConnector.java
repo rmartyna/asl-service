@@ -25,7 +25,14 @@ public class TestConsoleConnector {
 
     @BeforeClass
     public static void init() {
-       applicationContext = new ClassPathXmlApplicationContext("asl-service-test-application-context.xml");
+       //applicationContext = new ClassPathXmlApplicationContext("asl-service-test-application-context.xml");
+    }
+
+    @Test
+    public void testOutsideIpAddress() throws Exception {
+        host = "89.65.26.46";
+        testCpuConfiguration();
+        host = "127.0.0.1";
     }
 
     @Test

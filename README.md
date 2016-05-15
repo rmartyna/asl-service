@@ -12,13 +12,17 @@ Instrukcja instalacji:
     * db.username - uzytkownik bazy danych
     * db.password - haslo podanego uzytkownika do bazy danych
 
+    * service.host - adres IP maszyny(zewnetrzny)
+    * service.port - port na ktorym nasluchuje serwis
+
     Przykladowy plik konfiguracyjny:
     -----
     db.url=jdbc:postgresql://localhost:5432/db
     db.username=rmartyna
     db.password=rmartyna
     -----
-8. uruchomic asl-service z klasy Main
+8. przkierowac podany port na routerze
+9. uruchomic asl-service z klasy Main
 
 
 

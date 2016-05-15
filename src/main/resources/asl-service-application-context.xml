@@ -160,6 +160,8 @@
 
     <bean id="dbConnection" class="pl.edu.agh.DbConnection">
         <property name="dataSource" ref="dataSource"/>
+        <property name="host" value="${service.host}"/>
+        <property name="port" value="${service.port}"/>
     </bean>
 
 </beans>
