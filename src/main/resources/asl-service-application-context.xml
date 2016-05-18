@@ -121,7 +121,7 @@
                 <ref bean="kernSystemLog"/>
                 <ref bean="authSystemLog"/>
                 <ref bean="bootSystemLog"/>
-                <ref bean="dmesgSystemLog"/>
+                <!-- <ref bean="dmesgSystemLog"/> -->
             </list>
         </property>
     </bean>
@@ -146,10 +146,12 @@
         <property name="dbConnection" ref="dbConnection"/>
     </bean>
 
+    <!--
     <bean id="dmesgSystemLog" class="pl.edu.agh.SystemLog">
         <property name="filePath" value="/var/log/dmesg"/>
         <property name="dbConnection" ref="dbConnection"/>
     </bean>
+    -->
 
     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
         <property name="driverClassName" value="org.postgresql.Driver"/>

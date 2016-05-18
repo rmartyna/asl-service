@@ -114,4 +114,6 @@ public abstract class Daemon implements InitializingBean, Runnable {
     public List<String> getOperations() { return operations; }
 
     public void setOperations(List<String> operations) { this.operations = operations; }
+
+    public DbConnection getDbConnection() { return dbConnection; }
 }

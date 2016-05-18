@@ -102,3 +102,18 @@ CREATE TABLE IF NOT EXISTS system_logs (
   file_number INTEGER NOT NULL,
   date TIMESTAMP NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS console_configuration (
+  id SERIAL PRIMARY KEY,
+  service_id INTEGER REFERENCES service,
+  cpu_temp_lower_color NUMERIC(15,3) NOT NULL,
+  cpu_temp_upper_color NUMERIC(15,3) NOT NULL,
+  cpu_load_lower_color NUMERIC(15,3) NOT NULL,
+  cpu_load_upper_color NUMERIC(15,3) NOT NULL,
+  bandwidth_lower_color NUMERIC(15,3) NOT NULL,
+  bandwidth_upper_color NUMERIC(15,3) NOT NULL,
+  io_lower_color NUMERIC(15,3) NOT NULL,
+  io_upper_color NUMERIC(15,3) NOT NULL,
+  ram_load_lower_color NUMERIC(15,3) NOT NULL,
+  ram_load_upper_color NUMERIC(15,3) NOT NULL
+);

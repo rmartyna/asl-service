@@ -1,4 +1,7 @@
+package pl.edu.agh;
+
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -63,6 +66,29 @@ public class TestConsoleConnector {
     @Test
     public void testInvalidParameterValue() throws Exception {
         testInvalid("cpu,sleepTime,asd");
+    }
+
+    @Test
+    public void testAddRemoveLog() throws Exception {
+        testValid("sysLog,addLog,/var/log/dmesg");
+        testValid("sysLog,removeLog,/var/log/dmesg");
+    }
+
+    @Test
+    public void testAddInvalidLog() throws Exception {
+        testInvalid("sysLog,addLog,/xxx/xzvasd/asds");
+    }
+
+    @Test
+    public void testAddLogTwice() throws Exception {
+        testValid("sysLog,addLog,/var/log/dmesg");
+        testInvalid("sysLog,addLog,/var/log/dmesg");
+        testValid("sysLog,removeLog,/var/log/dmesg");
+    }
+
+    @Test
+    public void testRemoveLogInvalid() throws Exception {
+        testInvalid("sysLog,removeLog,/sadf/asf/sf/sfas");
     }
 
     @Test
