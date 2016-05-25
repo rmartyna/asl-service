@@ -62,7 +62,7 @@ public class CpuDaemon extends Daemon {
                     temperatures = tempList.toArray(new Double[tempList.size()]);
                     LOGGER.info("Result temperature: " + Arrays.toString(temperatures));
 
-                } catch(IOException e) {
+                } catch(Exception e) {
                     LOGGER.error("Error getting CPU temperature", e);
                 }
 
@@ -77,7 +77,7 @@ public class CpuDaemon extends Daemon {
                     matcher.find();
                     fanSpeed = Integer.parseInt(matcher.group(1));
                     LOGGER.info("Result fan speed: " + fanSpeed);
-                } catch(IOException e) {
+                } catch(Exception e) {
                     LOGGER.error("Error getting CPU fan speed", e);
                 }
 
@@ -102,7 +102,7 @@ public class CpuDaemon extends Daemon {
                         } catch (Exception e) {
                         }
                     }
-                } catch(IOException e) {
+                } catch(Exception e) {
                     LOGGER.error("Error getting CPU usage", e);
                 }
 
@@ -126,7 +126,7 @@ public class CpuDaemon extends Daemon {
                 }
             }
 
-            if(fanSpeed >= getConfiguration().get("fanMin") && fanSpeed <= getConfiguration().get("fanMax")) {
+            if(fanSpeed != null && fanSpeed >= getConfiguration().get("fanMin") && fanSpeed <= getConfiguration().get("fanMax")) {
                 PreparedStatement saveFanSpeed = getConnection().prepareStatement("INSERT INTO cpu_fan(cpu_id, speed, date) VALUES(?,?,?)");
                 saveFanSpeed.setInt(1, daemonId);
                 saveFanSpeed.setInt(2, fanSpeed);
@@ -134,16 +134,19 @@ public class CpuDaemon extends Daemon {
                 saveFanSpeed.executeUpdate();
             }
 
-            Double overallUsage = cpuIowaitUsage + cpuSystemUsage + cpuUserUsage;
-            if(overallUsage >= getConfiguration().get("usageMin") && overallUsage <= getConfiguration().get("usageMax")) {
-                PreparedStatement saveUsage = getConnection().prepareStatement("INSERT INTO cpu_usage(cpu_id, \"user\", system, iowait, date) VALUES(?,?,?,?,?)");
-                saveUsage.setInt(1, daemonId);
-                saveUsage.setDouble(2, cpuUserUsage);
-                saveUsage.setDouble(3, cpuSystemUsage);
-                saveUsage.setDouble(4, cpuIowaitUsage);
-                saveUsage.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
-                saveUsage.executeUpdate();
+            if(cpuIowaitUsage != null && cpuSystemUsage != null && cpuUserUsage != null) {
+                Double overallUsage = cpuIowaitUsage + cpuSystemUsage + cpuUserUsage;
+                if(overallUsage >= getConfiguration().get("usageMin") && overallUsage <= getConfiguration().get("usageMax")) {
+                    PreparedStatement saveUsage = getConnection().prepareStatement("INSERT INTO cpu_usage(cpu_id, \"user\", system, iowait, date) VALUES(?,?,?,?,?)");
+                    saveUsage.setInt(1, daemonId);
+                    saveUsage.setDouble(2, cpuUserUsage);
+                    saveUsage.setDouble(3, cpuSystemUsage);
+                    saveUsage.setDouble(4, cpuIowaitUsage);
+                    saveUsage.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+                    saveUsage.executeUpdate();
+                }
             }
+
 
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);
