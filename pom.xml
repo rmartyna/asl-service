@@ -56,23 +56,17 @@
             <version>9.3-1104-jdbc41</version>
         </dependency>
 
-
         <dependency>
-            <groupId>org.fusesource</groupId>
-            <artifactId>sigar</artifactId>
-            <version>1.6.4</version>
+            <groupId>pl.edu.agh</groupId>
+            <artifactId>asl-persistence</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
-
-
     </dependencies>
-
-
-
-
 </project>

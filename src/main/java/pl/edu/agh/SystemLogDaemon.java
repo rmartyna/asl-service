@@ -1,15 +1,20 @@
 package pl.edu.agh;
 
 import org.apache.log4j.Logger;
+import pl.edu.agh.dao.SystemLogsDAO;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class SystemLogDaemon extends Daemon {
 
     private Date startLoopTime;
 
     private List<SystemLog> systemLogs;
+
+    private SystemLogsDAO systemLogsDAO;
 
     private static final Logger LOGGER = Logger.getLogger(SystemLogDaemon.class);
 
@@ -19,28 +24,30 @@ public class SystemLogDaemon extends Daemon {
     }
 
     public void run() {
-        while(true) {
+        while (true) {
+            LOGGER.info("System log loop start");
             startLoopTime = new Date();
-            if(getConfiguration().get("enabled") != 0) {
-                LOGGER.info("System log loop start");
-
-                LOGGER.info("Gathering logs: ");
-                for(SystemLog systemLog : systemLogs) {
-                    try {
-                        systemLog.gatherLogs();
-                    } catch(Exception e) {
-                        LOGGER.error("Error gathering logs for: " + systemLog.getFilePath(), e);
-                    }
-                }
-
-                LOGGER.info("Saving logs");
-                saveLogs();
+            if (configured) {
+                getData();
             }
             waitForNextLoop();
         }
     }
 
-    public void saveLogs() {
+    public void getData() {
+        if(getConfiguration().get("enabled") != 0) {
+            LOGGER.info("Gathering logs: ");
+            for(SystemLog systemLog : systemLogs) {
+                try {
+                    systemLog.gatherLogs();
+                } catch(Exception e) {
+                    LOGGER.error("Error gathering logs for: " + systemLog.getFilePath(), e);
+                }
+            }
+        }
+    }
+
+    public synchronized void saveLogs() {
         for(SystemLog systemLog : systemLogs)
             systemLog.saveLogs();
     }
@@ -55,59 +62,86 @@ public class SystemLogDaemon extends Daemon {
     }
 
     @Override
-    public String operation(String name, String value) {
-        LOGGER.info("Executing operation " + name + " with value " + value);
+    public synchronized void configure(Map<String, String> newConfiguration) throws IllegalArgumentException {
+        String logsList = null;
 
-        if(name.equals("addLog"))
-            return addLog(value);
+        for(String attribute: newConfiguration.keySet()) {
+            if (attribute.equalsIgnoreCase("list")) {
+                logsList = newConfiguration.get(attribute);
 
-        if(name.equals("removeLog"))
-            return removeLog(value);
+            }
+        }
+        if(logsList != null)
+            newConfiguration.remove("list");
 
-        //TODO implement
-        if(name.equals("listLogs"))
-            throw new IllegalArgumentException("listLogs operation is not implemented yet");
+        super.configure(newConfiguration);
 
-        throw new IllegalArgumentException("Operation " + name + " is not available");
+        String[] logs = logsList.split(",");
+
+        //remove if not found
+        List<SystemLog> toRemove = new ArrayList<SystemLog>();
+        for(SystemLog systemLog : systemLogs) {
+            boolean found = false;
+            for(String path : logs) {
+                if(systemLog.getFilePath().equals(path)) {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+                toRemove.add(systemLog);
+        }
+
+        for(SystemLog systemLog : toRemove)
+            systemLogs.remove(systemLog);
+
+
+        //add if not found
+        List<String> toAdd = new ArrayList<String>();
+        for(String path : logs) {
+            boolean found = false;
+            for(SystemLog systemLog: systemLogs) {
+                if(systemLog.getFilePath().equals(path)) {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+                toAdd.add(path);
+        }
+
+        for(String path : toAdd)
+            addLog(path);
+
+        //set service id
+        for(SystemLog systemLog : systemLogs)
+            systemLog.setServiceId(getServiceId());
+
+        //get last log
+        for(SystemLog systemLog : systemLogs)
+            systemLog.getLastFile();
     }
 
-    public String addLog(String path) {
+    public void addLog(String path) {
         LOGGER.info("Adding log at path " + path);
-
-        for(SystemLog systemLog : systemLogs)
-            if(systemLog.getFilePath().equals(path))
-                throw new IllegalArgumentException("System log " + path + " already exists.");
 
         try {
             SystemLog systemLog = new SystemLog();
-            systemLog.setDbConnection(getDbConnection());
             systemLog.setFilePath(path);
             systemLog.afterPropertiesSet();
+            systemLog.setSystemLogsDAO(systemLogsDAO);
             systemLogs.add(systemLog);
             LOGGER.info("System log added successfully");
-            return "Added system log " + path;
         } catch(Exception e) {
             throw new IllegalArgumentException("Failed to add system log " + path, e);
         }
-
-    }
-
-    public String removeLog(String path) {
-        LOGGER.info("Removing log at path " + path);
-
-        for(SystemLog systemLog : systemLogs) {
-            if(systemLog.getFilePath().equals(path)) {
-                systemLogs.remove(systemLog);
-                LOGGER.info("System log removed successfully");
-                return "Removed system log " + path;
-            }
-        }
-
-        throw new IllegalArgumentException("System log " + path + " cannot be removed because it does not exist");
     }
 
     public void setSystemLogs(List<SystemLog> systemLogs) {
         this.systemLogs = systemLogs;
     }
 
+    public void setSystemLogsDAO(SystemLogsDAO systemLogsDAO) {
+        this.systemLogsDAO = systemLogsDAO;
+    }
 }

@@ -13,6 +13,10 @@ public class DaemonMaster implements InitializingBean {
 
     private List<Daemon> daemons;
 
+    private String mode;
+
+    private Integer pollRate;
+
     private static final Logger LOGGER = Logger.getLogger(DaemonMaster.class);
 
     @Override
@@ -23,6 +27,17 @@ public class DaemonMaster implements InitializingBean {
             LOGGER.info("Executing " + daemon.getName());
             threadPool.execute(daemon);
         }
+
+    }
+
+    public void logData() {
+        for(Daemon daemon : daemons)
+            daemon.saveLogs();
+    }
+
+    //TODO load configuration from database instead of parsing
+    public void configure() {
+        LOGGER.info("Configuring: ");
 
     }
 
@@ -66,4 +81,19 @@ public class DaemonMaster implements InitializingBean {
         this.daemons = daemons;
     }
 
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public Integer getPollRate() {
+        return pollRate;
+    }
+
+    public void setPollRate(Integer pollRate) {
+        this.pollRate = pollRate;
+    }
 }

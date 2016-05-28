@@ -10,19 +10,17 @@ public abstract class Daemon implements InitializingBean, Runnable {
 
     private String name;
 
-    private DbConnection dbConnection;
-
-    private Connection connection;
-
-    private Integer serviceId;
+    private DbConnector dbConnector;
 
     private Map<String, Integer> configuration = new HashMap<String, Integer>();
 
-    private List<String> operations = new LinkedList<String>();
+    protected boolean configured = false;
 
     private static final Logger LOGGER = Logger.getLogger(Daemon.class);
 
     public abstract void run();
+
+    public abstract void getData();
 
     public abstract void saveLogs();
 
@@ -30,28 +28,17 @@ public abstract class Daemon implements InitializingBean, Runnable {
 
     public abstract Integer getDaemonId();
 
-    public abstract String operation(String name, String value);
-
     @Override
     public void afterPropertiesSet() throws Exception {
 
-        if (name == null)
+        if(name == null)
             throw new IllegalArgumentException("Name property cannot be null");
 
-        if(dbConnection == null)
-            throw new IllegalArgumentException("Db connection property cannot be null");
+        if(dbConnector == null)
+            throw new IllegalArgumentException("Db connector property cannot be null");
 
         if(configuration == null)
             throw new IllegalArgumentException("Configuration property cannot be null");
-
-        if(configuration.get("sleepTime") == null)
-            throw new IllegalArgumentException("Configuration must contain sleepTime parameter");
-
-        if(configuration.get("enabled") == null)
-            throw new IllegalArgumentException("Configuration must contain enabled parameter");
-
-        connection = dbConnection.getConnection();
-        serviceId = dbConnection.getServiceId();
     }
 
     public void waitForNextLoop() {
@@ -69,13 +56,11 @@ public abstract class Daemon implements InitializingBean, Runnable {
         }
     }
 
-    public void configure(Map<String, String> newConfiguration) throws IllegalArgumentException {
+    public synchronized void configure(Map<String, String> newConfiguration) throws IllegalArgumentException {
         LOGGER.info("Name: " + getName() + ", received configuration: " + newConfiguration);
 
         for(String attribute: newConfiguration.keySet()) {
-            if(operations.contains(attribute)) {
-                operation(attribute, newConfiguration.get(attribute));
-            } else if(configuration.containsKey(attribute)) {
+            if(configuration.containsKey(attribute)) {
                 try {
                     configuration.put(attribute, Integer.parseInt(newConfiguration.get(attribute)));
                 } catch(Exception e) {
@@ -85,6 +70,8 @@ public abstract class Daemon implements InitializingBean, Runnable {
                 throw new IllegalArgumentException("Attribute '" + attribute + "' is not configurable.");
             }
         }
+
+        configured = true;
     }
 
     public void setName(String name) {
@@ -95,25 +82,16 @@ public abstract class Daemon implements InitializingBean, Runnable {
         return name;
     }
 
-    public void setDbConnection(DbConnection dbConnection) {
-        this.dbConnection = dbConnection;
-    }
-
-    public Connection getConnection() {
-        return connection;
+    public void setDbConnector(DbConnector dbConnector) {
+        this.dbConnector = dbConnector;
     }
 
     public Integer getServiceId() {
-        return serviceId;
+        return dbConnector.getServiceId();
     }
 
     public Map<String, Integer> getConfiguration() { return configuration; }
 
     public void setConfiguration(Map<String, Integer> configuration) { this.configuration = configuration; }
 
-    public List<String> getOperations() { return operations; }
-
-    public void setOperations(List<String> operations) { this.operations = operations; }
-
-    public DbConnection getDbConnection() { return dbConnection; }
 }

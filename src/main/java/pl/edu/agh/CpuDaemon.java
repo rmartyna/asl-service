@@ -2,15 +2,17 @@ package pl.edu.agh;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import pl.edu.agh.beans.Cpu;
+import pl.edu.agh.beans.CpuFan;
+import pl.edu.agh.beans.CpuTemp;
+import pl.edu.agh.beans.CpuUsage;
+import pl.edu.agh.dao.CpuDAO;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,133 +22,135 @@ public class CpuDaemon extends Daemon {
 
     private Integer daemonId;
 
-    private Double[] temperatures;
+    private CpuDAO cpuDAO;
 
-    private Integer fanSpeed;
+    private List<CpuTemp> tempData = new ArrayList<CpuTemp>();
 
-    private Double cpuUserUsage;
+    private List<CpuFan> fanData = new ArrayList<CpuFan>();
 
-    private Double cpuSystemUsage;
-
-    private Double cpuIowaitUsage;
+    private List<CpuUsage> usageData = new ArrayList<CpuUsage>();
 
     private static final Logger LOGGER = Logger.getLogger(CpuDaemon.class);
 
-    //TODO initialize configuration map with spring in bean with parameters from config file
     @Override
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
-        daemonId = getDaemonId();
+    }
 
+    @Override
+    public synchronized void configure(Map<String, String> newConfiguration) throws IllegalArgumentException {
+        super.configure(newConfiguration);
+        daemonId = getDaemonId();
     }
 
     public void run() {
-        while(true) {
+        while (true) {
+            LOGGER.info("CPU loop start");
             startLoopTime = new Date();
-            if(getConfiguration().get("enabled") != 0) {
-                LOGGER.info("CPU loop start");
-
-                LOGGER.info("Computing temperature of CPU cores");
-                try {
-                    Process sensorsProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"core [0-9]\" -i"});
-                    String sensorsOutput = IOUtils.toString(sensorsProcess.getInputStream(), "UTF-8");
-                    LOGGER.info("Sensors output for CPU temperature:\n" + sensorsOutput);
-
-                    Pattern pattern = Pattern.compile(".*\\+([0-9]+\\.[0-9]+).*\\(.*");
-                    List<Double> tempList = new ArrayList<Double>();
-                    for(String line : sensorsOutput.split("\n")) {
-                        Matcher matcher = pattern.matcher(line);
-                        matcher.find();
-                        tempList.add(Double.parseDouble(matcher.group(1)));
-                    }
-                    temperatures = tempList.toArray(new Double[tempList.size()]);
-                    LOGGER.info("Result temperature: " + Arrays.toString(temperatures));
-
-                } catch(Exception e) {
-                    LOGGER.error("Error getting CPU temperature", e);
-                }
-
-                LOGGER.info("Computing speed of CPU fan");
-                try {
-                    Process sensorsProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"fan\" -i"});
-                    String sensorsOutput = IOUtils.toString(sensorsProcess.getInputStream(), "UTF-8");
-                    LOGGER.info("Sensors output for CPU fan speed:\n" + sensorsOutput);
-
-                    Pattern pattern = Pattern.compile(".*\\s+(\\d+) RPM.*");
-                    Matcher matcher = pattern.matcher(sensorsOutput);
-                    matcher.find();
-                    fanSpeed = Integer.parseInt(matcher.group(1));
-                    LOGGER.info("Result fan speed: " + fanSpeed);
-                } catch(Exception e) {
-                    LOGGER.error("Error getting CPU fan speed", e);
-                }
-
-                LOGGER.info("Computing cpu usage");
-                try {
-                    Process iostatProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "iostat -yc 1 1"});
-                    String iostatOutput = IOUtils.toString(iostatProcess.getInputStream(), "UTF-8");
-                    LOGGER.info("iostat disk output:\n" + iostatOutput);
-
-                    Pattern pattern = Pattern.compile("\\s+([0-9,]+)\\s+[0-9,]+\\s+([0-9,]+)\\s+([0-9,]+).*");
-                    for (String line : iostatOutput.split("\n")) {
-                        try {
-                            Matcher matcher = pattern.matcher(line);
-                            matcher.find();
-                            cpuUserUsage = Double.parseDouble(matcher.group(1).replace(',', '.'));
-                            cpuSystemUsage = Double.parseDouble(matcher.group(2).replace(',', '.'));
-                            cpuIowaitUsage = Double.parseDouble(matcher.group(3).replace(',', '.'));
-
-                            LOGGER.info("CPU user usage: " + cpuUserUsage);
-                            LOGGER.info("CPU system usage: " + cpuSystemUsage);
-                            LOGGER.info("CPU iowait usage: " + cpuIowaitUsage);
-                        } catch (Exception e) {
-                        }
-                    }
-                } catch(Exception e) {
-                    LOGGER.error("Error getting CPU usage", e);
-                }
-
-                LOGGER.info("Saving logs");
-                saveLogs();
+            if (configured) {
+                getData();
             }
             waitForNextLoop();
         }
     }
 
-    public void saveLogs() {
+    public void getData() {
+
+        if(getConfiguration().get("enabled") != 0) {
+            LOGGER.info("Computing temperature of CPU cores");
+            try {
+                Process sensorsProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"core [0-9]\" -i"});
+                String sensorsOutput = IOUtils.toString(sensorsProcess.getInputStream(), "UTF-8");
+                LOGGER.info("Sensors output for CPU temperature:\n" + sensorsOutput);
+
+                Pattern pattern = Pattern.compile(".*\\+([0-9]+\\.[0-9]+).*\\(.*");
+                List<Double> tempList = new ArrayList<Double>();
+                for(String line : sensorsOutput.split("\n")) {
+                    Matcher matcher = pattern.matcher(line);
+                    matcher.find();
+                    tempList.add(Double.parseDouble(matcher.group(1)));
+                }
+                Double[] temperatures = tempList.toArray(new Double[tempList.size()]);
+                for(int i  = 0; i < temperatures.length; i++) {
+                    CpuTemp cpuTemp = new CpuTemp(daemonId, i+1, temperatures[i], new Timestamp(new Date().getTime()));
+                    synchronized (this) {
+                        tempData.add(cpuTemp);
+                    }
+                }
+
+            } catch(Exception e) {
+                LOGGER.error("Error getting CPU temperature", e);
+            }
+
+            LOGGER.info("Computing speed of CPU fan");
+            try {
+                Process sensorsProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "sensors | grep \"fan\" -i"});
+                String sensorsOutput = IOUtils.toString(sensorsProcess.getInputStream(), "UTF-8");
+                LOGGER.info("Sensors output for CPU fan speed:\n" + sensorsOutput);
+
+                Pattern pattern = Pattern.compile(".*\\s+(\\d+) RPM.*");
+                Matcher matcher = pattern.matcher(sensorsOutput);
+                matcher.find();
+                Integer fanSpeed = Integer.parseInt(matcher.group(1));
+
+                CpuFan cpuFan = new CpuFan(daemonId, fanSpeed, new Timestamp(new Date().getTime()));
+                synchronized (this) {
+                    fanData.add(cpuFan);
+                }
+            } catch(Exception e) {
+                LOGGER.error("Error getting CPU fan speed", e);
+            }
+
+            LOGGER.info("Computing cpu usage");
+            try {
+                Process iostatProcess = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "iostat -yc 1 1"});
+                String iostatOutput = IOUtils.toString(iostatProcess.getInputStream(), "UTF-8");
+                LOGGER.info("iostat disk output:\n" + iostatOutput);
+
+                Pattern pattern = Pattern.compile("\\s+([0-9,]+)\\s+[0-9,]+\\s+([0-9,]+)\\s+([0-9,]+).*");
+                for (String line : iostatOutput.split("\n")) {
+                    try {
+                        Matcher matcher = pattern.matcher(line);
+                        matcher.find();
+                        Double cpuUserUsage = Double.parseDouble(matcher.group(1).replace(',', '.'));
+                        Double cpuSystemUsage = Double.parseDouble(matcher.group(2).replace(',', '.'));
+                        Double cpuIowaitUsage = Double.parseDouble(matcher.group(3).replace(',', '.'));
+
+                        CpuUsage cpuUsage = new CpuUsage(daemonId, cpuUserUsage, cpuSystemUsage, cpuIowaitUsage,
+                                new Timestamp(new Date().getTime()));
+                        synchronized (this) {
+                            usageData.add(cpuUsage);
+                        }
+                    } catch (Exception e) {
+                    }
+                }
+            } catch(Exception e) {
+                LOGGER.error("Error getting CPU usage", e);
+            }
+        }
+    }
+
+
+    public synchronized void saveLogs() {
         try {
-            PreparedStatement saveTemp = getConnection().prepareStatement("INSERT INTO cpu_temp(cpu_id, core, value, date) VALUES(?,?,?,?)");
-            saveTemp.setInt(1, daemonId);
-            for(int i = 0; i < temperatures.length; i++) {
-                if(temperatures[i] >= getConfiguration().get("tempMin") && temperatures[i] <= getConfiguration().get("tempMax")) {
-                    saveTemp.setInt(2, i+1);
-                    saveTemp.setDouble(3, temperatures[i]);
-                    saveTemp.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-                    saveTemp.executeUpdate();
+            for(CpuFan cpuFan : fanData) {
+                if(cpuFan.getSpeed() >= getConfiguration().get("fanMin") && cpuFan.getSpeed() <= getConfiguration().get("fanMax")) {
+                    cpuDAO.insertFan(cpuFan);
                 }
             }
 
-            if(fanSpeed != null && fanSpeed >= getConfiguration().get("fanMin") && fanSpeed <= getConfiguration().get("fanMax")) {
-                PreparedStatement saveFanSpeed = getConnection().prepareStatement("INSERT INTO cpu_fan(cpu_id, speed, date) VALUES(?,?,?)");
-                saveFanSpeed.setInt(1, daemonId);
-                saveFanSpeed.setInt(2, fanSpeed);
-                saveFanSpeed.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-                saveFanSpeed.executeUpdate();
+            for(CpuTemp cpuTemp : tempData) {
+                if(cpuTemp.getValue() >= getConfiguration().get("tempMin") && cpuTemp.getValue() <= getConfiguration().get("tempMax")) {
+                    cpuDAO.insertTemp(cpuTemp);
+                }
             }
 
-            if(cpuIowaitUsage != null && cpuSystemUsage != null && cpuUserUsage != null) {
-                Double overallUsage = cpuIowaitUsage + cpuSystemUsage + cpuUserUsage;
+            for(CpuUsage cpuUsage : usageData) {
+                Double overallUsage = cpuUsage.getIowait() + cpuUsage.getUser() + cpuUsage.getSystem();
                 if(overallUsage >= getConfiguration().get("usageMin") && overallUsage <= getConfiguration().get("usageMax")) {
-                    PreparedStatement saveUsage = getConnection().prepareStatement("INSERT INTO cpu_usage(cpu_id, \"user\", system, iowait, date) VALUES(?,?,?,?,?)");
-                    saveUsage.setInt(1, daemonId);
-                    saveUsage.setDouble(2, cpuUserUsage);
-                    saveUsage.setDouble(3, cpuSystemUsage);
-                    saveUsage.setDouble(4, cpuIowaitUsage);
-                    saveUsage.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
-                    saveUsage.executeUpdate();
+                    cpuDAO.insertUsage(cpuUsage);
                 }
             }
-
 
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);
@@ -159,31 +163,26 @@ public class CpuDaemon extends Daemon {
 
     public Integer getDaemonId() {
         try {
-            PreparedStatement getDaemonIdStatement = getConnection().prepareStatement("SELECT id FROM cpu WHERE service_id=" + getServiceId());
             try {
-                ResultSet result = getDaemonIdStatement.executeQuery();
-                result.next();
-                return result.getInt(1);
+                Cpu cpu = cpuDAO.getByServiceId(getServiceId());
+                return (int) cpu.getId();
             } catch (Exception e) {
                 LOGGER.info("Could not get cpu id from database", e);
             }
 
-            PreparedStatement putDaemonIdStatement = getConnection().prepareStatement("INSERT INTO cpu(service_id, description) VALUES(?, ?)");
-            putDaemonIdStatement.setInt(1, getServiceId());
-            putDaemonIdStatement.setString(2, "No CPU info");
-            putDaemonIdStatement.executeUpdate();
+            Cpu cpu = new Cpu(getServiceId(), "No description");
+            cpuDAO.insert(cpu);
 
-            ResultSet result = getDaemonIdStatement.executeQuery();
-            result.next();
-            return result.getInt(1);
+            cpu = cpuDAO.getByServiceId(getServiceId());
+            return (int) cpu.getId();
+
         } catch (Exception e) {
-            LOGGER.error("Could not put cpu information into database", e);
-            throw new RuntimeException(e);
+            LOGGER.error("Could not get cpu id from database", e);
+            throw new RuntimeException();
         }
     }
 
-    @Override
-    public String operation(String name, String value) {
-        throw new IllegalArgumentException("No available operations");
+    public void setCpuDAO(CpuDAO cpuDAO) {
+        this.cpuDAO = cpuDAO;
     }
 }

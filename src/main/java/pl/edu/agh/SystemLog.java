@@ -2,19 +2,19 @@ package pl.edu.agh;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
+import pl.edu.agh.dao.SystemLogsDAO;
 
 import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Date;
 
 public class SystemLog implements InitializingBean {
 
     private String filePath;
-
-    private DbConnection dbConnection;
-
-    private Connection connection;
 
     private Integer serviceId;
 
@@ -22,65 +22,49 @@ public class SystemLog implements InitializingBean {
 
     private String currentFile;
 
-    private String difference;
+    private List<pl.edu.agh.beans.SystemLog> systemLogs = new ArrayList<pl.edu.agh.beans.SystemLog>();
 
     private Integer fileNumber;
+
+    private SystemLogsDAO systemLogsDAO;
 
     private static final Logger LOGGER = Logger.getLogger(SystemLog.class);
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        if(dbConnection == null)
-            throw new IllegalArgumentException("Db connection property cannot be null");
-
         if(filePath == null)
             throw new IllegalArgumentException("File path property cannot be null");
 
         File file = new File(filePath);
         if(!file.exists())
             throw new IllegalArgumentException("File '" + filePath + "' does not exist");
-
-        connection = dbConnection.getConnection();
-        serviceId = dbConnection.getServiceId();
     }
 
     public void gatherLogs() {
-        if(lastFile == null)
-            getLastFile();
+        if(lastFile == null) {
+            LOGGER.error("Last file cannot be null");
+            return;
+        }
 
         getCurrentFile();
         computeDifference();
     }
 
-    private void getLastFile() {
+    public void getLastFile() {
+        if(lastFile != null)
+            return;
         LOGGER.info("Getting last file");
         fileNumber = 1;
         lastFile = "";
 
         try {
-            PreparedStatement getFileNumber = connection.prepareStatement("SELECT MAX(file_number) FROM system_logs WHERE service_id=? AND file_path=?");
-            getFileNumber.setInt(1, serviceId);
-            getFileNumber.setString(2, filePath);
-            ResultSet resultSet = getFileNumber.executeQuery();
-            resultSet.next();
-            fileNumber = resultSet.getInt(1);
-            LOGGER.info("File number: " + fileNumber);
-        } catch(SQLException e) {
-            LOGGER.error("Could not retrieve file number from database", e);
-        }
-
-        try {
-            PreparedStatement getLastFile = connection.prepareStatement("SELECT log FROM system_logs WHERE service_id=? AND file_path=? AND file_number=? ORDER BY id");
-            getLastFile.setInt(1, serviceId);
-            getLastFile.setString(2, filePath);
-            getLastFile.setInt(3, fileNumber);
-            ResultSet resultSet = getLastFile.executeQuery();
-            while(resultSet.next())
-                lastFile += resultSet.getString(1);
-        } catch(SQLException e) {
+            fileNumber = systemLogsDAO.getMaxFileNumber(serviceId, filePath);
+            List<pl.edu.agh.beans.SystemLog> systemLogs = systemLogsDAO.getSystemLogList(serviceId, filePath, fileNumber);
+            for(pl.edu.agh.beans.SystemLog systemLog : systemLogs)
+                lastFile += systemLog.getLog();
+        } catch (Exception e) {
             LOGGER.error("Could not retrieve last file from database", e);
         }
-
     }
 
     private void getCurrentFile() {
@@ -93,31 +77,30 @@ public class SystemLog implements InitializingBean {
     }
 
     private void computeDifference() {
-        if(currentFile.startsWith(lastFile))
-            difference = currentFile.substring(lastFile.length());
-        else
-            difference = currentFile;
+        pl.edu.agh.beans.SystemLog systemLog = null;
+        if(currentFile.startsWith(lastFile)) {
+            systemLog = new pl.edu.agh.beans.SystemLog(serviceId, filePath,
+                    currentFile.substring(lastFile.length()), fileNumber, new Timestamp(new Date().getTime()));
+        }
+        else {
+            fileNumber++;
+            systemLog = new pl.edu.agh.beans.SystemLog(serviceId, filePath,
+                    currentFile, fileNumber, new Timestamp(new Date().getTime()));
+        }
 
-        LOGGER.info("File difference: " + difference);
+        synchronized (this) {
+            systemLogs.add(systemLog);
+        }
+
 
         lastFile = currentFile;
     }
 
-    public void saveLogs() {
-        if (difference.equals("")) {
-            LOGGER.info("No new logs. Not saving in database");
-            return;
-        }
-
+    public synchronized void saveLogs() {
         try {
-            PreparedStatement saveSystemLog = connection.prepareStatement("INSERT INTO system_logs(service_id, file_path, log, file_number, date) VALUES(?,?,?,?,?)");
-            saveSystemLog.setInt(1, serviceId);
-            saveSystemLog.setString(2, filePath);
-            saveSystemLog.setString(3, difference);
-            saveSystemLog.setInt(4, fileNumber);
-            saveSystemLog.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
-            saveSystemLog.executeUpdate();
-
+            for(pl.edu.agh.beans.SystemLog systemLog : systemLogs) {
+                systemLogsDAO.insert(systemLog);
+            }
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);
         }
@@ -127,11 +110,31 @@ public class SystemLog implements InitializingBean {
         this.filePath = filePath;
     }
 
-    public void setDbConnection(DbConnection dbConnection) {
-        this.dbConnection = dbConnection;
-    }
-
     public String getFilePath() {
         return filePath;
+    }
+
+    public void setSystemLogsDAO(SystemLogsDAO systemLogsDAO) {
+        this.systemLogsDAO = systemLogsDAO;
+    }
+
+    public void setServiceId(Integer serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SystemLog)) return false;
+
+        SystemLog systemLog = (SystemLog) o;
+
+        return filePath != null ? filePath.equals(systemLog.filePath) : systemLog.filePath == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return filePath != null ? filePath.hashCode() : 0;
     }
 }

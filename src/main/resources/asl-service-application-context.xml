@@ -10,140 +10,166 @@
 
     <context:property-placeholder location="classpath:asl-service.properties" />
 
+    <import resource="classpath*:**/asl-persistence-context.xml" />
 
     <bean id="consoleConnector" class="pl.edu.agh.ConsoleConnector">
         <property name="daemonMaster" ref="daemonMaster"/>
+        <property name="host" value="${console.host}"/>
+        <property name="port" value="${console.port}"/>
+        <property name="daemonPort" value="${service.port}"/>
     </bean>
 
     <bean id="daemonMaster" class="pl.edu.agh.DaemonMaster">
         <property name="daemons">
             <list value-type="pl.edu.agh.Daemon">
                 <ref bean="cpuDaemon"/>
-                <ref bean="gpuDaemon"/>
                 <ref bean="diskDaemon"/>
                 <ref bean="networkDaemon"/>
                 <ref bean="memoryDaemon"/>
                 <ref bean="systemLogDaemon"/>
             </list>
         </property>
+        <property name="mode" value="push"/>
+        <property name="pollRate" value="60000"/>
     </bean>
 
     <bean id="cpuDaemon" class="pl.edu.agh.CpuDaemon">
         <property name="name" value="cpu"/>
-        <property name="dbConnection" ref="dbConnection"/>
+        <property name="dbConnector" ref="dbConnector"/>
+        <property name="cpuDAO" ref="cpuDAO"/>
         <property name="configuration">
             <map>
-                <entry key="sleepTime" value="60000"/>
+                <entry key="sleepTime" value="10000"/>
                 <entry key="enabled" value="1"/>
-                <entry key="tempMin" value="0"/>
-                <entry key="tempMax" value="1000"/>
-                <entry key="usageMin" value="0"/>
-                <entry key="usageMax" value="1000"/>
-                <entry key="fanMin" value="0"/>
-                <entry key="fanMax" value="10000"/>
-            </map>
-        </property>
-    </bean>
-
-    <bean id="gpuDaemon" class="pl.edu.agh.GpuDaemon">
-        <property name="name" value="gpu"/>
-        <property name="dbConnection" ref="dbConnection"/>
-        <property name="configuration">
-            <map>
-                <entry key="sleepTime" value="60000"/>
-                <entry key="enabled" value="0"/>
+                <entry key="tempMin">
+                    <null/>
+                </entry>
+                <entry key="tempMax">
+                    <null/>
+                </entry>
+                <entry key="usageMin">
+                    <null/>
+                </entry>
+                <entry key="usageMax">
+                    <null/>
+                </entry>
+                <entry key="fanMin">
+                    <null/>
+                </entry>
+                <entry key="fanMax">
+                    <null/>
+                </entry>
             </map>
         </property>
     </bean>
 
     <bean id="diskDaemon" class="pl.edu.agh.DiskDaemon">
         <property name="name" value="disk"/>
-        <property name="dbConnection" ref="dbConnection"/>
+        <property name="dbConnector" ref="dbConnector"/>
+        <property name="diskDAO" ref="diskDAO"/>
         <property name="configuration">
             <map>
-                <entry key="sleepTime" value="60000"/>
+                <entry key="sleepTime" value="10000"/>
                 <entry key="enabled" value="1"/>
-                <entry key="readMin" value="0"/>
-                <entry key="readMax" value="1000000"/>
-                <entry key="writeMin" value="0"/>
-                <entry key="writeMax" value="1000000"/>
+                <entry key="readMin">
+                    <null/>
+                </entry>
+                <entry key="readMax">
+                    <null/>
+                </entry>
+                <entry key="writeMin">
+                    <null/>
+                </entry>
+                <entry key="writeMax">
+                    <null/>
+                </entry>
             </map>
         </property>
     </bean>
 
     <bean id="networkDaemon" class="pl.edu.agh.NetworkDaemon">
         <property name="name" value="network"/>
-        <property name="dbConnection" ref="dbConnection"/>
+        <property name="dbConnector" ref="dbConnector"/>
+        <property name="networkDAO" ref="networkDAO"/>
         <property name="configuration">
             <map>
-                <entry key="sleepTime" value="60000"/>
+                <entry key="sleepTime" value="10000"/>
                 <entry key="enabled" value="1"/>
-                <entry key="downloadMin" value="0"/>
-                <entry key="downloadMax" value="100000"/>
-                <entry key="uploadMin" value="0"/>
-                <entry key="uploadMax" value="1000000"/>
+                <entry key="downloadMin">
+                    <null/>
+                </entry>
+                <entry key="downloadMax">
+                    <null/>
+                </entry>
+                <entry key="uploadMin">
+                    <null/>
+                </entry>
+                <entry key="uploadMax">
+                    <null/>
+                </entry>
             </map>
         </property>
     </bean>
 
     <bean id="memoryDaemon" class="pl.edu.agh.MemoryDaemon">
         <property name="name" value="memory"/>
-        <property name="dbConnection" ref="dbConnection"/>
+        <property name="dbConnector" ref="dbConnector"/>
+        <property name="memoryDAO" ref="memoryDAO"/>
         <property name="configuration">
             <map>
-                <entry key="sleepTime" value="60000"/>
+                <entry key="sleepTime" value="10000"/>
                 <entry key="enabled" value="1"/>
-                <entry key="memoryMin" value="0"/>
-                <entry key="memoryMax" value="100000000"/>
+                <entry key="memoryMin">
+                    <null/>
+                </entry>
+                <entry key="memoryMax">
+                    <null/>
+                </entry>
             </map>
         </property>
     </bean>
 
     <bean id="systemLogDaemon" class="pl.edu.agh.SystemLogDaemon">
         <property name="name" value="syslog"/>
-        <property name="dbConnection" ref="dbConnection"/>
+        <property name="dbConnector" ref="dbConnector"/>
+        <property name="systemLogsDAO" ref="systemLogsDAO"/>
         <property name="configuration">
             <map>
-                <entry key="sleepTime" value="600000"/>
+                <entry key="sleepTime" value="10000"/>
                 <entry key="enabled" value="1"/>
             </map>
         </property>
-        <property name="operations">
-            <list value-type="java.lang.String">
-                <value>addLog</value>
-                <value>removeLog</value>
-                <value>listLogs</value>
-            </list>
-        </property>
         <property name="systemLogs">
             <list value-type="pl.edu.agh.SystemLog">
+                <null/>
+                <!--
                 <ref bean="syslogSystemLog"/>
                 <ref bean="kernSystemLog"/>
                 <ref bean="authSystemLog"/>
                 <ref bean="bootSystemLog"/>
-                <!-- <ref bean="dmesgSystemLog"/> -->
+                -->
             </list>
         </property>
     </bean>
 
     <bean id="syslogSystemLog" class="pl.edu.agh.SystemLog">
         <property name="filePath" value="/var/log/syslog"/>
-        <property name="dbConnection" ref="dbConnection"/>
+        <property name="systemLogsDAO" ref="systemLogsDAO"/>
     </bean>
 
     <bean id="kernSystemLog" class="pl.edu.agh.SystemLog">
         <property name="filePath" value="/var/log/kern.log"/>
-        <property name="dbConnection" ref="dbConnection"/>
+        <property name="systemLogsDAO" ref="systemLogsDAO"/>
     </bean>
 
     <bean id="authSystemLog" class="pl.edu.agh.SystemLog">
         <property name="filePath" value="/var/log/auth.log"/>
-        <property name="dbConnection" ref="dbConnection"/>
+        <property name="systemLogsDAO" ref="systemLogsDAO"/>
     </bean>
 
     <bean id="bootSystemLog" class="pl.edu.agh.SystemLog">
         <property name="filePath" value="/var/log/boot.log"/>
-        <property name="dbConnection" ref="dbConnection"/>
+        <property name="systemLogsDAO" ref="systemLogsDAO"/>
     </bean>
 
     <!--
@@ -160,8 +186,8 @@
         <property name="password" value="${db.password}"/>
     </bean>
 
-    <bean id="dbConnection" class="pl.edu.agh.DbConnection">
-        <property name="dataSource" ref="dataSource"/>
+    <bean id="dbConnector" class="pl.edu.agh.DbConnector">
+        <property name="serviceDAO" ref="serviceDAO"/>
         <property name="host" value="${service.host}"/>
         <property name="port" value="${service.port}"/>
     </bean>
