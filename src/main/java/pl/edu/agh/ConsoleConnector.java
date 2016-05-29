@@ -45,7 +45,7 @@ public class ConsoleConnector implements InitializingBean, Runnable {
         }
     }
 
-    public void pull() {
+    public void push() {
         while(true) {
             try {
                 Socket client = serverSocket.accept();
@@ -58,7 +58,7 @@ public class ConsoleConnector implements InitializingBean, Runnable {
                 if(message.equalsIgnoreCase("data")) {
                     try {
                         daemonMaster.logData();
-                        out.writeBytes("OK \r\n");
+                        out.writeBytes("OK\r\n");
                     } catch(Exception e) {
                         LOGGER.error("Error logging data", e);
                         out.writeBytes("ERROR \r\n");
@@ -67,7 +67,7 @@ public class ConsoleConnector implements InitializingBean, Runnable {
                 else if(message.equalsIgnoreCase("conf")) {
                     try {
                         daemonMaster.configure();
-                        out.writeBytes("OK \r\n");
+                        out.writeBytes("OK\r\n");
                         return;
                     } catch(Exception e) {
                         LOGGER.error("Error configuring data", e);
@@ -88,14 +88,15 @@ public class ConsoleConnector implements InitializingBean, Runnable {
         }
     }
 
-    public void push() {
+    public void pull() {
         try {
+            LOGGER.info("Connecting to " + host + ":" + port);
             Socket socket = new Socket(host, port);
 
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            out.writeBytes("data \r\n");
+            out.writeBytes("data\r\n");
             String result = in.readLine();
             LOGGER.info("Service response: " + result);
 
@@ -115,7 +116,7 @@ public class ConsoleConnector implements InitializingBean, Runnable {
             out = new DataOutputStream(socket.getOutputStream());
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            out.writeBytes("conf \r\n");
+            out.writeBytes("conf\r\n");
             result = in.readLine();
             LOGGER.info("Service response: " + result);
 

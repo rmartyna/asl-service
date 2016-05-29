@@ -76,6 +76,8 @@ public class SystemLogDaemon extends Daemon {
 
         super.configure(newConfiguration);
 
+        logsList = logsList.trim();
+
         String[] logs = logsList.split(",");
 
         //remove if not found
@@ -123,6 +125,8 @@ public class SystemLogDaemon extends Daemon {
     }
 
     public void addLog(String path) {
+        if(path.length() == 0)
+            return;
         LOGGER.info("Adding log at path " + path);
 
         try {

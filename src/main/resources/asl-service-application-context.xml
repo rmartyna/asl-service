@@ -12,13 +12,6 @@
 
     <import resource="classpath*:**/asl-persistence-context.xml" />
 
-    <bean id="consoleConnector" class="pl.edu.agh.ConsoleConnector">
-        <property name="daemonMaster" ref="daemonMaster"/>
-        <property name="host" value="${console.host}"/>
-        <property name="port" value="${console.port}"/>
-        <property name="daemonPort" value="${service.port}"/>
-    </bean>
-
     <bean id="daemonMaster" class="pl.edu.agh.DaemonMaster">
         <property name="daemons">
             <list value-type="pl.edu.agh.Daemon">
@@ -31,6 +24,8 @@
         </property>
         <property name="mode" value="push"/>
         <property name="pollRate" value="60000"/>
+        <property name="serviceConfigurationDAO" ref="serviceConfigurationDAO"/>
+        <property name="dbConnector" ref="dbConnector"/>
     </bean>
 
     <bean id="cpuDaemon" class="pl.edu.agh.CpuDaemon">
@@ -41,24 +36,12 @@
             <map>
                 <entry key="sleepTime" value="10000"/>
                 <entry key="enabled" value="1"/>
-                <entry key="tempMin">
-                    <null/>
-                </entry>
-                <entry key="tempMax">
-                    <null/>
-                </entry>
-                <entry key="usageMin">
-                    <null/>
-                </entry>
-                <entry key="usageMax">
-                    <null/>
-                </entry>
-                <entry key="fanMin">
-                    <null/>
-                </entry>
-                <entry key="fanMax">
-                    <null/>
-                </entry>
+                <entry key="tempMin" value="0"/>
+                <entry key="tempMax" value="10000"/>
+                <entry key="usageMin" value="0"/>
+                <entry key="usageMax" value="10000"/>
+                <entry key="fanMin" value="0"/>
+                <entry key="fanMax" value="10000"/>
             </map>
         </property>
     </bean>
@@ -71,18 +54,10 @@
             <map>
                 <entry key="sleepTime" value="10000"/>
                 <entry key="enabled" value="1"/>
-                <entry key="readMin">
-                    <null/>
-                </entry>
-                <entry key="readMax">
-                    <null/>
-                </entry>
-                <entry key="writeMin">
-                    <null/>
-                </entry>
-                <entry key="writeMax">
-                    <null/>
-                </entry>
+                <entry key="readMin" value="0"/>
+                <entry key="readMax" value="100000"/>
+                <entry key="writeMin" value="0"/>
+                <entry key="writeMax" value="10000"/>
             </map>
         </property>
     </bean>
@@ -95,18 +70,10 @@
             <map>
                 <entry key="sleepTime" value="10000"/>
                 <entry key="enabled" value="1"/>
-                <entry key="downloadMin">
-                    <null/>
-                </entry>
-                <entry key="downloadMax">
-                    <null/>
-                </entry>
-                <entry key="uploadMin">
-                    <null/>
-                </entry>
-                <entry key="uploadMax">
-                    <null/>
-                </entry>
+                <entry key="downloadMin" value="0"/>
+                <entry key="downloadMax" value="10000"/>
+                <entry key="uploadMin" value="0"/>
+                <entry key="uploadMax" value="60000"/>
             </map>
         </property>
     </bean>
@@ -119,12 +86,8 @@
             <map>
                 <entry key="sleepTime" value="10000"/>
                 <entry key="enabled" value="1"/>
-                <entry key="memoryMin">
-                    <null/>
-                </entry>
-                <entry key="memoryMax">
-                    <null/>
-                </entry>
+                <entry key="memoryMin" value="0"/>
+                <entry key="memoryMax" value="100000000"/>
             </map>
         </property>
     </bean>
@@ -141,7 +104,7 @@
         </property>
         <property name="systemLogs">
             <list value-type="pl.edu.agh.SystemLog">
-                <null/>
+
                 <!--
                 <ref bean="syslogSystemLog"/>
                 <ref bean="kernSystemLog"/>
@@ -179,17 +142,18 @@
     </bean>
     -->
 
-    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <property name="driverClassName" value="org.postgresql.Driver"/>
-        <property name="url" value="${db.url}"/>
-        <property name="username" value="${db.username}"/>
-        <property name="password" value="${db.password}"/>
-    </bean>
-
     <bean id="dbConnector" class="pl.edu.agh.DbConnector">
         <property name="serviceDAO" ref="serviceDAO"/>
         <property name="host" value="${service.host}"/>
         <property name="port" value="${service.port}"/>
+    </bean>
+
+
+    <bean id="consoleConnector" class="pl.edu.agh.ConsoleConnector">
+        <property name="daemonMaster" ref="daemonMaster"/>
+        <property name="daemonPort" value="${service.port}"/>
+        <property name="host" value="${console.host}"/>
+        <property name="port" value="${console.port}"/>
     </bean>
 
 </beans>

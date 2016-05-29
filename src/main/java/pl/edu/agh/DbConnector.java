@@ -43,6 +43,7 @@ public class DbConnector implements InitializingBean {
             try {
                 Service service = serviceDAO.getByHostAndPort(host, port);
                 serviceId =  (int) service.getId();
+                return serviceId;
             } catch (Exception e) {
                 LOGGER.info("Could not get service id from database", e);
             }
