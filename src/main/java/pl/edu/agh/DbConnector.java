@@ -40,20 +40,8 @@ public class DbConnector implements InitializingBean {
             return serviceId;
 
         try {
-            try {
-                Service service = serviceDAO.getByHostAndPort(host, port);
-                serviceId =  (int) service.getId();
-                return serviceId;
-            } catch (Exception e) {
-                LOGGER.info("Could not get service id from database", e);
-            }
-
-            String description = InetAddress.getLocalHost().toString();
-            Service service = new Service(host, port, description);
-            serviceDAO.insert(service);
-
-            service = serviceDAO.getByHostAndPort(host, port);
-            serviceId = (int) service.getId();
+            Service service = serviceDAO.getByHostAndPort(host, port);
+            serviceId =  (int) service.getId();
             return serviceId;
 
         } catch (Exception e) {
