@@ -9,9 +9,16 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+/**
+ * This software may be modified and distributed under the terms
+ *  of the BSD license.  See the LICENSE.txt file for details.
+ */
+
 public class ConsoleConnector implements InitializingBean, Runnable {
 
     private DaemonMaster daemonMaster;
+
+    private DbConnector dbConnector;
 
     private ServerSocket serverSocket;
 
@@ -29,17 +36,19 @@ public class ConsoleConnector implements InitializingBean, Runnable {
     }
 
     public void run() {
-        LOGGER.info("Running console connector im mode: " + daemonMaster.getMode());
+
         while(true) {
+            LOGGER.info("Running console connector im mode: " + daemonMaster.getMode());
             if(daemonMaster.getMode().equalsIgnoreCase("pull")) {
                 pull();
-            } else if(daemonMaster.getMode().equalsIgnoreCase("push")) {
-                push();
                 try {
+                    LOGGER.info("Poll rate: " + daemonMaster.getPollRate());
                     Thread.sleep(daemonMaster.getPollRate());
                 } catch(Exception e) {
                     LOGGER.error("Interrupted sleep", e);
                 }
+            } else if(daemonMaster.getMode().equalsIgnoreCase("push")) {
+                push();
             } else
                 throw new RuntimeException("Invalid mode: " + daemonMaster.getMode());
         }
@@ -73,6 +82,10 @@ public class ConsoleConnector implements InitializingBean, Runnable {
                         LOGGER.error("Error configuring data", e);
                         out.writeBytes("ERROR \r\n");
                     }
+                } else if(message.equalsIgnoreCase("remove")) {
+                    out.writeBytes("OK\r\n");
+                    out.close();
+                    System.exit(0);
                 }
                 else {
                     LOGGER.error("Invalid message");
@@ -96,8 +109,31 @@ public class ConsoleConnector implements InitializingBean, Runnable {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            out.writeBytes("data\r\n");
+
+            out.writeBytes("" + dbConnector.getServiceId().toString() + "\r\n");
             String result = in.readLine();
+
+            in.close();
+            out.close();
+            socket.close();
+
+            socket = new Socket(host, port);
+
+            out = new DataOutputStream(socket.getOutputStream());
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            LOGGER.info("Service response: " + result);
+            if(result.equalsIgnoreCase("remove")) {
+                out.writeBytes("OK\r\n");
+                in.readLine();
+                in.close();
+                out.close();
+                System.exit(0);
+            }
+
+
+            out.writeBytes("data\r\n");
+            result = in.readLine();
             LOGGER.info("Service response: " + result);
 
             if(!result.equalsIgnoreCase("OK")) {
@@ -151,5 +187,9 @@ public class ConsoleConnector implements InitializingBean, Runnable {
 
     public void setDaemonPort(Integer daemonPort) {
         this.daemonPort = daemonPort;
+    }
+
+    public void setDbConnector(DbConnector dbConnector) {
+        this.dbConnector = dbConnector;
     }
 }

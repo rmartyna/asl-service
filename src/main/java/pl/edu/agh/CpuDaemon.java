@@ -8,13 +8,15 @@ import pl.edu.agh.beans.CpuTemp;
 import pl.edu.agh.beans.CpuUsage;
 import pl.edu.agh.dao.CpuDAO;
 
-import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+/**
+ * This software may be modified and distributed under the terms
+ *  of the BSD license.  See the LICENSE.txt file for details.
+ */
 
 public class CpuDaemon extends Daemon {
 

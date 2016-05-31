@@ -12,6 +12,11 @@ import java.util.AbstractCollection;
 
 import static org.junit.Assert.assertTrue;
 
+/**
+ * This software may be modified and distributed under the terms
+ *  of the BSD license.  See the LICENSE.txt file for details.
+ */
+
 public class TestConsoleConnector {
 
     private static ApplicationContext applicationContext;

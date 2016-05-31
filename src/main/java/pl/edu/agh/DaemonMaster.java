@@ -14,6 +14,11 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * This software may be modified and distributed under the terms
+ *  of the BSD license.  See the LICENSE.txt file for details.
+ */
+
 public class DaemonMaster implements InitializingBean {
 
     private List<Daemon> daemons;
@@ -47,6 +52,9 @@ public class DaemonMaster implements InitializingBean {
 
     public void configure() {
         ServiceConfiguration serviceConfiguration = getServiceConfiguration();
+
+        pollRate = serviceConfiguration.getPollRate();
+        mode = serviceConfiguration.getMode();
 
         Map<String, String> cpuConf = new HashMap<String, String>();
         cpuConf.put("sleepTime", Integer.toString(serviceConfiguration.getCpuFrequency()));

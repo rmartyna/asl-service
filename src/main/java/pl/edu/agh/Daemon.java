@@ -6,6 +6,11 @@ import org.springframework.beans.factory.InitializingBean;
 import java.sql.Connection;
 import java.util.*;
 
+/**
+ * This software may be modified and distributed under the terms
+ *  of the BSD license.  See the LICENSE.txt file for details.
+ */
+
 public abstract class Daemon implements InitializingBean, Runnable {
 
     private String name;
@@ -52,7 +57,7 @@ public abstract class Daemon implements InitializingBean, Runnable {
             }
 
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOGGER.error("Interrupted sleep", e);
         }
     }
 

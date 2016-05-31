@@ -5,11 +5,10 @@ import org.springframework.beans.factory.InitializingBean;
 import pl.edu.agh.beans.Service;
 import pl.edu.agh.dao.ServiceDAO;
 
-import javax.sql.DataSource;
-import java.net.InetAddress;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+/**
+ * This software may be modified and distributed under the terms
+ *  of the BSD license.  See the LICENSE.txt file for details.
+ */
 
 public class DbConnector implements InitializingBean {
 

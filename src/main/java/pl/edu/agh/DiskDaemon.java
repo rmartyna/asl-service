@@ -16,7 +16,11 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-//TODO current implementation assumes that there is only one disk
+/**
+ * This software may be modified and distributed under the terms
+ *  of the BSD license.  See the LICENSE.txt file for details.
+ */
+
 public class DiskDaemon extends Daemon {
 
     private Date startLoopTime;

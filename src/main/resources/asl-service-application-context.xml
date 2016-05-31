@@ -8,7 +8,7 @@
         http://www.springframework.org/schema/context
         http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-    <context:property-placeholder location="classpath:asl-service.properties" />
+    <context:property-placeholder location="file:${asl.properties}" />
 
     <import resource="classpath*:**/asl-persistence-context.xml" />
 
@@ -154,6 +154,7 @@
         <property name="daemonPort" value="${service.port}"/>
         <property name="host" value="${console.host}"/>
         <property name="port" value="${console.port}"/>
+        <property name="dbConnector" ref="dbConnector"/>
     </bean>
 
 </beans>
