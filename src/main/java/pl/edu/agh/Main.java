@@ -7,8 +7,14 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Application entry point
+ */
 public class Main {
 
+    /**
+     * Loads spring context from xml file
+     */
     public static void main(String[] args) {
         new ClassPathXmlApplicationContext("asl-service-application-context.xml");
     }

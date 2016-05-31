@@ -17,6 +17,9 @@ import java.util.Date;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Collects logs from particular file
+ */
 public class SystemLog implements InitializingBean {
 
     private String filePath;
@@ -45,6 +48,9 @@ public class SystemLog implements InitializingBean {
             throw new IllegalArgumentException("File '" + filePath + "' does not exist");
     }
 
+    /**
+     * Gathers logs
+     */
     public void gatherLogs() {
         if(lastFile == null) {
             LOGGER.error("Last file cannot be null");
@@ -55,6 +61,9 @@ public class SystemLog implements InitializingBean {
         computeDifference();
     }
 
+    /**
+     * Gets log file from database that was collected last time
+     */
     public void getLastFile() {
         if(lastFile != null)
             return;
@@ -72,6 +81,9 @@ public class SystemLog implements InitializingBean {
         }
     }
 
+    /**
+     * Gets current log file from file system
+     */
     private void getCurrentFile() {
         try {
             currentFile = new String(Files.readAllBytes(FileSystems.getDefault().getPath(filePath)));
@@ -81,6 +93,10 @@ public class SystemLog implements InitializingBean {
         }
     }
 
+    /**
+     * Computes difference between current and last log and stores result in systemLogs list.
+     * Increments file number if necessary. Sets last log file to current.
+     */
     private void computeDifference() {
         pl.edu.agh.beans.SystemLog systemLog = null;
         if(currentFile.startsWith(lastFile)) {
@@ -101,11 +117,15 @@ public class SystemLog implements InitializingBean {
         lastFile = currentFile;
     }
 
+    /**
+     * Saves logs in database and clears systemLogs list
+     */
     public synchronized void saveLogs() {
         try {
             for(pl.edu.agh.beans.SystemLog systemLog : systemLogs) {
                 systemLogsDAO.insert(systemLog);
             }
+            systemLogs = new ArrayList<pl.edu.agh.beans.SystemLog>();
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);
         }

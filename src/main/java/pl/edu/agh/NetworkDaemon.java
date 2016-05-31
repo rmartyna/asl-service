@@ -17,6 +17,9 @@ import java.util.regex.Pattern;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Daemon that collects network logs
+ */
 public class NetworkDaemon extends Daemon {
 
     private Date startLoopTime;
@@ -44,6 +47,7 @@ public class NetworkDaemon extends Daemon {
         }
     }
 
+    @Override
     public void getData() {
         if(getConfiguration().get("enabled") != 0) {
             LOGGER.info("Computing network in/out");
@@ -74,6 +78,7 @@ public class NetworkDaemon extends Daemon {
         }
     }
 
+    @Override
     public synchronized void saveLogs() {
         try {
             for(Network network : data) {

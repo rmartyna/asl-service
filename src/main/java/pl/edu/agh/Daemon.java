@@ -11,6 +11,9 @@ import java.util.*;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Parent class for all daemons
+ */
 public abstract class Daemon implements InitializingBean, Runnable {
 
     private String name;
@@ -23,12 +26,24 @@ public abstract class Daemon implements InitializingBean, Runnable {
 
     private static final Logger LOGGER = Logger.getLogger(Daemon.class);
 
+    /**
+     * Main method of thread
+     */
     public abstract void run();
 
+    /**
+     * Collects logs
+     */
     public abstract void getData();
 
+    /**
+     * Saves logs
+     */
     public abstract void saveLogs();
 
+    /**
+     * Gets time of last run
+     */
     public abstract Date getStartLoopTime();
 
     public abstract Integer getDaemonId();
@@ -46,6 +61,9 @@ public abstract class Daemon implements InitializingBean, Runnable {
             throw new IllegalArgumentException("Configuration property cannot be null");
     }
 
+    /**
+     * Waits until next logs should be collected
+     */
     public void waitForNextLoop() {
         try {
 
@@ -61,6 +79,9 @@ public abstract class Daemon implements InitializingBean, Runnable {
         }
     }
 
+    /**
+     * Configures daemon from given configuration map[parameter_name -> parameter_value]
+     */
     public synchronized void configure(Map<String, String> newConfiguration) throws IllegalArgumentException {
         LOGGER.info("Name: " + getName() + ", received configuration: " + newConfiguration);
 

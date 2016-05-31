@@ -13,11 +13,14 @@ import java.util.Map;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Daemon that collects system logs
+ */
 public class SystemLogDaemon extends Daemon {
 
     private Date startLoopTime;
 
-    private List<SystemLog> systemLogs;
+    private List<SystemLog> systemLogs = new ArrayList<SystemLog>();
 
     private SystemLogsDAO systemLogsDAO;
 
@@ -28,6 +31,7 @@ public class SystemLogDaemon extends Daemon {
         super.afterPropertiesSet();
     }
 
+    @Override
     public void run() {
         while (true) {
             LOGGER.info("System log loop start");
@@ -39,6 +43,7 @@ public class SystemLogDaemon extends Daemon {
         }
     }
 
+    @Override
     public void getData() {
         if(getConfiguration().get("enabled") != 0) {
             LOGGER.info("Gathering logs: ");
@@ -52,6 +57,7 @@ public class SystemLogDaemon extends Daemon {
         }
     }
 
+    @Override
     public synchronized void saveLogs() {
         for(SystemLog systemLog : systemLogs)
             systemLog.saveLogs();
@@ -66,22 +72,36 @@ public class SystemLogDaemon extends Daemon {
         return null;
     }
 
+    /**
+     * Removes list attribute from configuration, calls parent method and then processes log list
+     */
     @Override
     public synchronized void configure(Map<String, String> newConfiguration) throws IllegalArgumentException {
+
         String logsList = null;
 
         for(String attribute: newConfiguration.keySet()) {
             if (attribute.equalsIgnoreCase("list")) {
                 logsList = newConfiguration.get(attribute);
-
             }
         }
+
         if(logsList != null)
             newConfiguration.remove("list");
 
         super.configure(newConfiguration);
 
+        proccessLogList(logsList);
+    }
+
+    /**
+     * Adds and removes system logs
+     */
+    public void proccessLogList(String logsList) {
+
         logsList = logsList.trim();
+
+        LOGGER.info("Logs list: " + logsList);
 
         String[] logs = logsList.split(",");
 
@@ -120,15 +140,11 @@ public class SystemLogDaemon extends Daemon {
         for(String path : toAdd)
             addLog(path);
 
-        //set service id
-        for(SystemLog systemLog : systemLogs)
-            systemLog.setServiceId(getServiceId());
-
-        //get last log
-        for(SystemLog systemLog : systemLogs)
-            systemLog.getLastFile();
     }
 
+    /**
+     * Adds new system log to collect
+     */
     public void addLog(String path) {
         if(path.length() == 0)
             return;
@@ -139,15 +155,13 @@ public class SystemLogDaemon extends Daemon {
             systemLog.setFilePath(path);
             systemLog.afterPropertiesSet();
             systemLog.setSystemLogsDAO(systemLogsDAO);
+            systemLog.setServiceId(getServiceId());
+            systemLog.getLastFile();
             systemLogs.add(systemLog);
             LOGGER.info("System log added successfully");
         } catch(Exception e) {
             throw new IllegalArgumentException("Failed to add system log " + path, e);
         }
-    }
-
-    public void setSystemLogs(List<SystemLog> systemLogs) {
-        this.systemLogs = systemLogs;
     }
 
     public void setSystemLogsDAO(SystemLogsDAO systemLogsDAO) {

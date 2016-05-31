@@ -17,6 +17,9 @@ import java.util.regex.Pattern;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Daemon that collect memory logs
+ */
 public class MemoryDaemon extends Daemon {
 
     private Date startLoopTime;
@@ -32,6 +35,7 @@ public class MemoryDaemon extends Daemon {
         super.afterPropertiesSet();
     }
 
+    @Override
     public void run() {
         while(true) {
             LOGGER.info("Memory loop start");
@@ -43,6 +47,7 @@ public class MemoryDaemon extends Daemon {
         }
     }
 
+    @Override
     public void getData() {
         if(getConfiguration().get("enabled") != 0) {
             LOGGER.info("Computing current/max memory usage");
@@ -68,6 +73,7 @@ public class MemoryDaemon extends Daemon {
         }
     }
 
+    @Override
     public synchronized void saveLogs() {
         try {
             for(Memory memory : data) {

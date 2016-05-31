@@ -10,6 +10,9 @@ import pl.edu.agh.dao.ServiceDAO;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Utility class that gets service ID from database
+ */
 public class DbConnector implements InitializingBean {
 
     private ServiceDAO serviceDAO;
@@ -34,6 +37,9 @@ public class DbConnector implements InitializingBean {
             throw new IllegalArgumentException("Port property cannot be null");
     }
 
+    /**
+     * Returns ID of this service
+     */
     public Integer getServiceId() {
         if (serviceId != null)
             return serviceId;

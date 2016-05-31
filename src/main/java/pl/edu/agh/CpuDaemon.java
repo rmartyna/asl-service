@@ -18,6 +18,9 @@ import java.util.regex.Pattern;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Daemon that collects cpu logs
+ */
 public class CpuDaemon extends Daemon {
 
     private Date startLoopTime;
@@ -45,6 +48,7 @@ public class CpuDaemon extends Daemon {
         daemonId = getDaemonId();
     }
 
+    @Override
     public void run() {
         while (true) {
             LOGGER.info("CPU loop start");
@@ -56,6 +60,7 @@ public class CpuDaemon extends Daemon {
         }
     }
 
+    @Override
     public void getData() {
 
         if(getConfiguration().get("enabled") != 0) {
@@ -132,7 +137,7 @@ public class CpuDaemon extends Daemon {
         }
     }
 
-
+    @Override
     public synchronized void saveLogs() {
         try {
             for(CpuFan cpuFan : fanData) {
@@ -158,11 +163,12 @@ public class CpuDaemon extends Daemon {
             LOGGER.error("Could not save logs in the database", e);
         }
     }
-
+    @Override
     public Date getStartLoopTime() {
         return startLoopTime;
     }
 
+    @Override
     public Integer getDaemonId() {
         try {
             try {

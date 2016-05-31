@@ -14,7 +14,7 @@ Instrukcja instalacji:
 
 4. Zainstalować pakiet iostat
 
-5. Skopiować plik asl-service.jar do katalogu {INSTALL_DIR}
+5. Skopiować plik binary/asl-service.jar do katalogu {INSTALL_DIR}
 
 6. Utworzyć plik asl-service.properties w katalogu {INSTALL_DIR}. Plik musi zawierać następujące parametry:
     * service.host - adres IP tej maszyny
@@ -40,7 +40,7 @@ Instrukcja instalacji:
    db.password=rmartyna
    -------------------------------
 
-7. Uruchomić polecenie w katalogu z plikiem run-service.sh
+7. Uruchomić polecenie w katalogu config
     * chmod +x run-service.sh
 
 8. Edytować zawartość pliku run-service.sh i ustawić zmienną INSTALL_DIR, np.
@@ -48,4 +48,6 @@ Instrukcja instalacji:
 
 9. Uruchomić program poleceniem ./run-service.sh
 
-10. Logi z działania programu dostępne są w pliku {INSTALL_DIR}/logs/service.log
+10. Logi z działania programu dostępne są w pliku {INSTALL_DIR}/logs/service
+
+11. Działanie programu można zakończyć poleceniem CTRL+C

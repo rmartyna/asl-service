@@ -21,6 +21,9 @@ import java.util.regex.Pattern;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Daemon that collects disk logs
+ */
 public class DiskDaemon extends Daemon {
 
     private Date startLoopTime;
@@ -46,6 +49,7 @@ public class DiskDaemon extends Daemon {
         daemonId = getDaemonId();
     }
 
+    @Override
     public void run() {
         while (true) {
             LOGGER.info("Disk loop start");
@@ -57,6 +61,7 @@ public class DiskDaemon extends Daemon {
         }
     }
 
+    @Override
     public void getData() {
         if(getConfiguration().get("enabled") != 0) {
 
@@ -112,6 +117,7 @@ public class DiskDaemon extends Daemon {
         }
     }
 
+    @Override
     public synchronized void saveLogs() {
         try {
             for(DiskUsage diskUsage : usageData) {
@@ -129,10 +135,12 @@ public class DiskDaemon extends Daemon {
         }
     }
 
+    @Override
     public Date getStartLoopTime() {
         return startLoopTime;
     }
 
+    @Override
     public Integer getDaemonId() {
         try {
             try {

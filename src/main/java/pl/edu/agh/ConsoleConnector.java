@@ -14,6 +14,9 @@ import java.net.Socket;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Class that communicates with console
+ */
 public class ConsoleConnector implements InitializingBean, Runnable {
 
     private DaemonMaster daemonMaster;
@@ -30,11 +33,16 @@ public class ConsoleConnector implements InitializingBean, Runnable {
 
     private static final Logger LOGGER = Logger.getLogger(ConsoleConnector.class);
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         serverSocket = new ServerSocket(daemonPort);
         new Thread(this).start();
     }
 
+    /**
+     * Runs in either pull or push mode
+     */
+    @Override
     public void run() {
 
         while(true) {
@@ -54,6 +62,9 @@ public class ConsoleConnector implements InitializingBean, Runnable {
         }
     }
 
+    /**
+     * In push mode it waits for input from console
+     */
     public void push() {
         while(true) {
             try {
@@ -101,6 +112,9 @@ public class ConsoleConnector implements InitializingBean, Runnable {
         }
     }
 
+    /**
+     * In pull mode it initiates communication with console
+     */
     public void pull() {
         try {
             LOGGER.info("Connecting to " + host + ":" + port);

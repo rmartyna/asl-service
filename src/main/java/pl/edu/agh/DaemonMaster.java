@@ -19,6 +19,9 @@ import java.util.concurrent.Executors;
  *  of the BSD license.  See the LICENSE.txt file for details.
  */
 
+/**
+ * Manages all daemons
+ */
 public class DaemonMaster implements InitializingBean {
 
     private List<Daemon> daemons;
@@ -44,12 +47,17 @@ public class DaemonMaster implements InitializingBean {
 
     }
 
+    /**
+     * Saves logs for all daemons
+     */
     public void logData() {
         for(Daemon daemon : daemons)
             daemon.saveLogs();
     }
 
-
+    /**
+     * Gets service configuration and configures daemons
+     */
     public void configure() {
         ServiceConfiguration serviceConfiguration = getServiceConfiguration();
 
@@ -91,6 +99,9 @@ public class DaemonMaster implements InitializingBean {
         }
     }
 
+    /**
+     * Returns configuration for this server. In none was found in database then creates new one.
+     */
     private ServiceConfiguration getServiceConfiguration() {
         try {
             try {
@@ -122,42 +133,6 @@ public class DaemonMaster implements InitializingBean {
         } catch (Exception e) {
             LOGGER.error("Could not put service configuration into database", e);
             throw new RuntimeException();
-        }
-    }
-
-    public void configureSlaves(String configuration) throws IllegalArgumentException {
-        LOGGER.info("Configuring daemons: ");
-
-        Map<String, Map<String, String>> daemonNameToConfigurationMap
-                = new HashMap<String, Map<String, String>>();
-
-        String[] properties = configuration.split(";");
-        for (String p : properties) {
-            String[] property = p.split(",");
-            if (daemonNameToConfigurationMap.containsKey(property[0]))
-                daemonNameToConfigurationMap.get(property[0]).put(property[1], property[2]);
-            else {
-                Map<String, String> propertyMap = new HashMap<String, String>();
-                propertyMap.put(property[1], property[2]);
-                daemonNameToConfigurationMap.put(property[0], propertyMap);
-            }
-        }
-
-        for(String name : daemonNameToConfigurationMap.keySet())
-            LOGGER.info(name + ": " + daemonNameToConfigurationMap.get(name));
-
-
-        for(String key: daemonNameToConfigurationMap.keySet()) {
-            boolean configured = false;
-            for (Daemon daemon : daemons) {
-                if (daemon.getName().equalsIgnoreCase(key)) {
-                    daemon.configure(daemonNameToConfigurationMap.get(key));
-                    configured = true;
-                    break;
-                }
-            }
-            if(!configured)
-                throw new IllegalArgumentException("Invalid daemon name: " + key);
         }
     }
 
