@@ -86,6 +86,8 @@ public class NetworkDaemon extends Daemon {
                         || (network.getUpload() >= getConfiguration().get("uploadMin") && network.getUpload() <= getConfiguration().get("uploadMax"))) {
                     networkDAO.insert(network);
                 }
+
+                data = new ArrayList<Network>();
             }
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);

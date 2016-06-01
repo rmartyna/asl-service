@@ -146,11 +146,15 @@ public class CpuDaemon extends Daemon {
                 }
             }
 
+            fanData = new ArrayList<CpuFan>();
+
             for(CpuTemp cpuTemp : tempData) {
                 if(cpuTemp.getValue() >= getConfiguration().get("tempMin") && cpuTemp.getValue() <= getConfiguration().get("tempMax")) {
                     cpuDAO.insertTemp(cpuTemp);
                 }
             }
+
+            tempData = new ArrayList<CpuTemp>();
 
             for(CpuUsage cpuUsage : usageData) {
                 Double overallUsage = cpuUsage.getIowait() + cpuUsage.getUser() + cpuUsage.getSystem();
@@ -158,6 +162,8 @@ public class CpuDaemon extends Daemon {
                     cpuDAO.insertUsage(cpuUsage);
                 }
             }
+
+            usageData = new ArrayList<CpuUsage>();
 
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);

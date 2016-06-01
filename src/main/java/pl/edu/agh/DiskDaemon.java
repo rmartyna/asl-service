@@ -127,9 +127,14 @@ public class DiskDaemon extends Daemon {
                 }
             }
 
+            usageData = new ArrayList<DiskUsage>();
+
             for(Partition partition : partitionData) {
                 diskDAO.insertPartition(partition);
             }
+
+            partitionData = new ArrayList<Partition>();
+
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);
         }

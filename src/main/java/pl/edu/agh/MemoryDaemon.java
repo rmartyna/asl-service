@@ -80,6 +80,8 @@ public class MemoryDaemon extends Daemon {
                 if (memory.getCurrent() >= getConfiguration().get("memoryMin") && memory.getCurrent() <= getConfiguration().get("memoryMax")) {
                     memoryDAO.insert(memory);
                 }
+
+                data = new ArrayList<Memory>();
             }
         } catch(Exception e) {
             LOGGER.error("Could not save logs in the database", e);
