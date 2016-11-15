@@ -22,7 +22,7 @@
                 <ref bean="systemLogDaemon"/>
             </list>
         </property>
-        <property name="mode" value="push"/>
+        <property name="mode" value="pull"/>
         <property name="pollRate" value="60000"/>
         <property name="serviceConfigurationDAO" ref="serviceConfigurationDAO"/>
         <property name="dbConnector" ref="dbConnector"/>
