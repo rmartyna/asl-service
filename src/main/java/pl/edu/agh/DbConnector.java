@@ -1,9 +1,14 @@
 package pl.edu.agh;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 import pl.edu.agh.beans.Service;
 import pl.edu.agh.dao.ServiceDAO;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 /**
  * This software may be modified and distributed under the terms
@@ -17,11 +22,9 @@ public class DbConnector implements InitializingBean {
 
     private ServiceDAO serviceDAO;
 
-    private String host;
-
-    private Integer port;
-
     private Integer serviceId;
+
+    public static final String DATA_FILE_NAME = "service.data";
 
     private static final Logger LOGGER = Logger.getLogger(DbConnection.class);
 
@@ -30,11 +33,7 @@ public class DbConnector implements InitializingBean {
         if(serviceDAO == null)
             throw new IllegalArgumentException("Service DAO property cannot be null");
 
-        if(host == null)
-            throw new IllegalArgumentException("Host property cannot be null");
-
-        if(port == null)
-            throw new IllegalArgumentException("Port property cannot be null");
+        readFile();
     }
 
     /**
@@ -43,27 +42,25 @@ public class DbConnector implements InitializingBean {
     public Integer getServiceId() {
         if (serviceId != null)
             return serviceId;
-
-        try {
-            Service service = serviceDAO.getByHostAndPort(host, port);
-            serviceId =  (int) service.getId();
-            return serviceId;
-
-        } catch (Exception e) {
-            LOGGER.error("Could not put service information into database", e);
-            throw new RuntimeException();
-        }
+        else
+            throw new IllegalArgumentException("No service id read from file/database");
     }
 
-    public void setHost(String host) {
-        this.host = host;
-    }
+    private void readFile() throws IOException, URISyntaxException {
+        File dataFile = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath() + "\\" + DATA_FILE_NAME);
 
-    public void setPort(Integer port) {
-        this.port = port;
+        if(dataFile.isFile()) {
+            String data = FileUtils.readFileToString(dataFile);
+            serviceId = Integer.parseInt(data);
+        } else
+            LOGGER.warn("No data file");
     }
 
     public void setServiceDAO(ServiceDAO serviceDAO) {
         this.serviceDAO = serviceDAO;
+    }
+
+    public void setServiceId(Integer serviceId) {
+        this.serviceId = serviceId;
     }
 }

@@ -104,35 +104,11 @@ public class DaemonMaster implements InitializingBean {
      */
     private ServiceConfiguration getServiceConfiguration() {
         try {
-            try {
-                return serviceConfigurationDAO.getByServiceId(dbConnector.getServiceId());
-            } catch (Exception e) {
-                LOGGER.info("Could not get service configuration from database", e);
-            }
-
-            ServiceConfiguration serviceConfiguration = new ServiceConfiguration();
-            serviceConfiguration.setServiceId(dbConnector.getServiceId());
-            serviceConfiguration.setMode(mode);
-            serviceConfiguration.setPollRate(pollRate);
-            serviceConfiguration.setCpuEnabled(1);
-            serviceConfiguration.setCpuFrequency(60000);
-            serviceConfiguration.setMemoryEnabled(1);
-            serviceConfiguration.setMemoryFrequency(60000);
-            serviceConfiguration.setNetworkEnabled(1);
-            serviceConfiguration.setNetworkFrequency(60000);
-            serviceConfiguration.setDiskEnabled(1);
-            serviceConfiguration.setDiskFrequency(60000);
-            serviceConfiguration.setSyslogEnabled(1);
-            serviceConfiguration.setSyslogFrequency(60000);
-            serviceConfiguration.setSyslogList("");
-
-            serviceConfigurationDAO.insert(serviceConfiguration);
-
             return serviceConfigurationDAO.getByServiceId(dbConnector.getServiceId());
-
         } catch (Exception e) {
-            LOGGER.error("Could not put service configuration into database", e);
-            throw new RuntimeException();
+            LOGGER.error("Could not get service configuration from database", e);
+            System.exit(0);
+            return null;
         }
     }
 

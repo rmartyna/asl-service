@@ -1,13 +1,17 @@
 package pl.edu.agh;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Formatter;
 
 /**
  * This software may be modified and distributed under the terms
@@ -31,6 +35,8 @@ public class ConsoleConnector implements InitializingBean, Runnable {
 
     private Integer port;
 
+    private String password;
+
     private static final Logger LOGGER = Logger.getLogger(ConsoleConnector.class);
 
     @Override
@@ -46,7 +52,7 @@ public class ConsoleConnector implements InitializingBean, Runnable {
     public void run() {
 
         while(true) {
-            LOGGER.info("Running console connector im mode: " + daemonMaster.getMode());
+            LOGGER.info("Running console connector in mode: " + daemonMaster.getMode());
             if(daemonMaster.getMode().equalsIgnoreCase("pull")) {
                 pull();
                 try {
@@ -57,8 +63,10 @@ public class ConsoleConnector implements InitializingBean, Runnable {
                 }
             } else if(daemonMaster.getMode().equalsIgnoreCase("push")) {
                 push();
-            } else
-                throw new RuntimeException("Invalid mode: " + daemonMaster.getMode());
+            } else {
+                LOGGER.error("Invalid mode: " + daemonMaster.getMode());
+                System.exit(0);
+            }
         }
     }
 
@@ -66,49 +74,31 @@ public class ConsoleConnector implements InitializingBean, Runnable {
      * In push mode it waits for input from console
      */
     public void push() {
-        while(true) {
-            try {
-                Socket client = serverSocket.accept();
+        try {
+            Socket client = serverSocket.accept();
 
-                BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                String message = in.readLine();
-                DataOutputStream out = new DataOutputStream(client.getOutputStream());
+            BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            String message = in.readLine();
+            DataOutputStream out = new DataOutputStream(client.getOutputStream());
 
-                LOGGER.info("Server message: " + message);
-                if(message.equalsIgnoreCase("data")) {
-                    try {
-                        daemonMaster.logData();
-                        out.writeBytes("OK\r\n");
-                    } catch(Exception e) {
-                        LOGGER.error("Error logging data", e);
-                        out.writeBytes("ERROR \r\n");
-                    }
-                }
-                else if(message.equalsIgnoreCase("conf")) {
-                    try {
-                        daemonMaster.configure();
-                        out.writeBytes("OK\r\n");
-                        return;
-                    } catch(Exception e) {
-                        LOGGER.error("Error configuring data", e);
-                        out.writeBytes("ERROR \r\n");
-                    }
-                } else if(message.equalsIgnoreCase("remove")) {
-                    out.writeBytes("OK\r\n");
-                    out.close();
-                    System.exit(0);
-                }
-                else {
-                    LOGGER.error("Invalid message");
-                }
+            LOGGER.info("Server message: " + message);
 
-                in.close();
-                out.close();
-                client.close();
+            String[] data = message.trim().split("\\|");
+            LOGGER.info("Data: " + Arrays.toString(data));
+            comparePasswords(data[0]);
 
-            } catch(Exception e) {
-                LOGGER.error("Error connecting with server", e);
-            }
+            tryToSaveData(data[1]);
+            out.writeBytes("OK\r\n");
+
+            in.close();
+            out.close();
+            client.close();
+
+            daemonMaster.logData();
+            daemonMaster.configure();
+
+        } catch(Exception e) {
+            LOGGER.error("Error connecting with server", e);
         }
     }
 
@@ -117,6 +107,7 @@ public class ConsoleConnector implements InitializingBean, Runnable {
      */
     public void pull() {
         try {
+
             LOGGER.info("Connecting to " + host + ":" + port);
             Socket socket = new Socket(host, port);
 
@@ -124,67 +115,62 @@ public class ConsoleConnector implements InitializingBean, Runnable {
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
 
-            out.writeBytes("" + dbConnector.getServiceId().toString() + "\r\n");
+            out.writeBytes(getPasswordHash(password) + "|" + dbConnector.getServiceId() + "\r\n");
             String result = in.readLine();
 
             in.close();
             out.close();
             socket.close();
 
-            socket = new Socket(host, port);
-
-            out = new DataOutputStream(socket.getOutputStream());
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-            LOGGER.info("Service response: " + result);
-            if(result.equalsIgnoreCase("remove")) {
-                out.writeBytes("OK\r\n");
-                in.readLine();
-                in.close();
-                out.close();
-                System.exit(0);
-            }
-
-
-            out.writeBytes("data\r\n");
-            result = in.readLine();
-            LOGGER.info("Service response: " + result);
-
-            if(!result.equalsIgnoreCase("OK")) {
-                LOGGER.error("Invalid response");
-                return;
-            }
+            if(!result.trim().equals("OK"))
+                throw new RuntimeException("Invalid response from server");
 
             daemonMaster.logData();
-
-            in.close();
-            out.close();
-            socket.close();
-
-            socket = new Socket(host, port);
-
-            out = new DataOutputStream(socket.getOutputStream());
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-            out.writeBytes("conf\r\n");
-            result = in.readLine();
-            LOGGER.info("Service response: " + result);
-
-            if(!result.equalsIgnoreCase("OK")) {
-                LOGGER.error("Invalid response");
-                return;
-            }
-
             daemonMaster.configure();
-
-            in.close();
-            out.close();
-            socket.close();
 
         } catch(Exception e) {
             LOGGER.error("Error connecting with server", e);
         }
 
+    }
+
+    private void tryToSaveData(String message) throws URISyntaxException, IOException {
+        File dataFile = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath() + "\\" + DbConnector.DATA_FILE_NAME);
+
+        FileUtils.writeStringToFile(dataFile, message);
+
+        dbConnector.setServiceId(Integer.parseInt(message));
+
+    }
+
+    private void comparePasswords(String consoleHash) {
+        LOGGER.info("Console hash: " + consoleHash);
+       String passwordHash = getPasswordHash(password);
+        if(!passwordHash.equalsIgnoreCase(consoleHash))
+            throw new RuntimeException("Password from console: " + consoleHash + ", does not match " +
+                                "password from service: " + passwordHash);
+    }
+
+    private String getPasswordHash(String password) {
+        try {
+
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            String result = byteToHex(digest.digest(password.getBytes("UTF-8")));
+            LOGGER.info("Password digest: " + result);
+            return result;
+        } catch(Exception e) {
+            throw new RuntimeException("Could not generate digest", e);
+        }
+    }
+
+    private static String byteToHex(byte[] digest) {
+        Formatter formatter = new Formatter();
+        for(byte b : digest) {
+            formatter.format("%02x", b);
+        }
+        String result = formatter.toString();
+        formatter.close();
+        return result;
     }
 
     public void setDaemonMaster(DaemonMaster daemonMaster) {
@@ -205,5 +191,9 @@ public class ConsoleConnector implements InitializingBean, Runnable {
 
     public void setDbConnector(DbConnector dbConnector) {
         this.dbConnector = dbConnector;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

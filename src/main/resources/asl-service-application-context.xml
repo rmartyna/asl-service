@@ -22,7 +22,7 @@
                 <ref bean="systemLogDaemon"/>
             </list>
         </property>
-        <property name="mode" value="pull"/>
+        <property name="mode" value="push"/>
         <property name="pollRate" value="60000"/>
         <property name="serviceConfigurationDAO" ref="serviceConfigurationDAO"/>
         <property name="dbConnector" ref="dbConnector"/>
@@ -106,8 +106,6 @@
 
     <bean id="dbConnector" class="pl.edu.agh.DbConnector">
         <property name="serviceDAO" ref="serviceDAO"/>
-        <property name="host" value="${service.host}"/>
-        <property name="port" value="${service.port}"/>
     </bean>
 
     <bean id="consoleConnector" class="pl.edu.agh.ConsoleConnector">
@@ -115,6 +113,7 @@
         <property name="daemonPort" value="${service.port}"/>
         <property name="host" value="${console.host}"/>
         <property name="port" value="${console.port}"/>
+        <property name="password" value="${service.password}"/>
         <property name="dbConnector" ref="dbConnector"/>
     </bean>
 
