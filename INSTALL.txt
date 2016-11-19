@@ -17,9 +17,6 @@ Instrukcja instalacji:
 5. Skopiować plik binary/asl-service.jar do katalogu {INSTALL_DIR}
 
 6. Utworzyć plik asl-service.properties w katalogu {INSTALL_DIR}. Plik musi zawierać następujące parametry:
-    * service.host - adres IP tej maszyny
-    * service.port - port na którym nasłuchuje serwis
-
     * console.host - adres IP maszyny na której zainstalowana jest konsola
     * console.port - port na którym nasłuchuje konsola
 
@@ -27,17 +24,20 @@ Instrukcja instalacji:
     * db.username - użytkownik bazy danych
     * db.password - hasło podanego użytkownika do bazy danych
 
+    * service.port - port na którym nasłuchuje serwis
+    * service.password - hasło wprowadzane przez administratora podczas dodawania serwera do konsoli
+
    Przykładowy plik konfiguracyjny:
    -------------------------------
-   service.host=192.168.0.19
-   service.port=30303
-
    console.host=89.65.26.46
    console.port=30304
 
    db.url=jdbc:postgresql://localhost:5432/db
    db.username=rmartyna
    db.password=rmartyna
+
+   service.port=30303
+   service.password=aqq123
    -------------------------------
 
 7. Uruchomić polecenie w katalogu config
